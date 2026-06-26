@@ -59,9 +59,10 @@ This repository strictly enforces Conventional Commits:
 
 ### 3. Issue & PR Templates
 
-All issues, tasks, and bug reports created in this repository must strictly follow the templates located in [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) (which comply with the `task-creation` skill format).
+All issues, tasks, and bug reports created in this repository must strictly follow the interactive forms defined under [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) (which comply with the `task-creation` skill format).
 
-Similarly, all Pull Requests must be structured according to the format defined in [`.github/pull_request_template.md`](.github/pull_request_template.md) (which complies with the `git-workflow` skill format).
+Similarly, all Pull Requests must be structured according to the template located under [`.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`](.github/PULL_REQUEST_TEMPLATE/pull_request_template.md) (which complies with the `git-workflow` skill format).
+
 
 
 ## 🛡️ Security Features
@@ -78,13 +79,15 @@ Similarly, all Pull Requests must be structured according to the format defined 
 github-workflows/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   ├── feature_request.md
-│   │   └── task.md
-│   ├── workflows/
-│   │   ├── ci.yml                     # Validator CI pipeline
-│   │   └── release.yml                # Release Please automation
-│   └── pull_request_template.md       # PR checklist template
+│   │   ├── bug_report.yml             # Interactive Bug report form
+│   │   ├── config.yml                 # Issue templates config
+│   │   ├── feature_request.yml        # Interactive Feature request form
+│   │   └── task.yml                   # Interactive Task chore form
+│   ├── PULL_REQUEST_TEMPLATE/
+│   │   └── pull_request_template.md   # PR checklist template
+│   └── workflows/
+│       ├── ci.yml                     # Validator CI pipeline
+│       └── release.yml                # Release Please automation
 ├── .gitignore                         # Git ignore configurations
 ├── .release-please-manifest.json      # Google Release Please version tracking
 ├── .yamllint                          # yamllint settings
@@ -92,6 +95,7 @@ github-workflows/
 ├── LICENSE                            # Apache-2.0 License
 ├── README.md                          # This documentation
 └── release-please-config.json         # Google Release Please config
+
 ```
 
 ## 📝 License
