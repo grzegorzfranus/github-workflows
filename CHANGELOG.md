@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/grzegorzfranus/github-workflows/compare/v1.1.0...v1.1.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **release:** fix merge check context name and upgrade actions to node 24 ([#5](https://github.com/grzegorzfranus/github-workflows/issues/5)) ([73113bc](https://github.com/grzegorzfranus/github-workflows/commit/73113bc61575ef48112f230d8fc0dfe89848a52d))
+
 ## [1.1.0](https://github.com/grzegorzfranus/github-workflows/compare/v1.0.0...v1.1.0) (2026-06-26)
 
 
