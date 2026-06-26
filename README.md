@@ -1,114 +1,89 @@
-# github-workflows
+# GitHub Workflows
 
-[![CI](https://github.com/grzegorzfranus/github-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/grzegorzfranus/github-workflows/actions/workflows/ci.yml)
-[![Release](https://github.com/grzegorzfranus/github-workflows/actions/workflows/release.yml/badge.svg)](https://github.com/grzegorzfranus/github-workflows/actions/workflows/release.yml)
-[![License](https://img.shields.io/github/license/grzegorzfranus/github-workflows)](LICENSE)
+| Source                                                                                                            | Version                                                                                                                                | CI                                                                                                                                                              | License                                                           |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [![Source Code](https://img.shields.io/badge/source-github-blue.svg)](https://github.com/grzegorzfranus/github-workflows) | [![Version](https://img.shields.io/github/v/release/grzegorzfranus/github-workflows)](https://github.com/grzegorzfranus/github-workflows/releases) | [![CI](https://github.com/grzegorzfranus/github-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/grzegorzfranus/github-workflows/actions/workflows/ci.yml) | [![Repository License](https://img.shields.io/badge/license-apache2.0-brightgreen.svg)](LICENSE) |
 
 Centralized, reusable, and secure GitHub Actions workflows and configuration templates designed to establish enterprise-grade CI/CD and repository hygiene standards.
 
 This repository serves as a model blueprint ("wzór") for corporate workflows. It incorporates strict security hardening, automated release cycles, and automated local lints.
 
----
+## ✨ Features
 
-## Author & Licensing
+- 🔒 **Immutable Third-Party Actions**: All external actions are pinned to their full 40-character commit SHA instead of mutable tags.
+- 🔑 **Job-Level Least Privilege**: Strict job-level GITHUB_TOKEN permissions (`contents: read` default) to prevent unauthorized access.
+- 🚀 **Isolated CI Executions**: Lint checks run inside clean environments using `pipx run` to prevent python package pollution.
+- 🤖 **Automated Release Management**: Zero-touch versioning, tagging, and changelog generation using Google Release Please.
+- 📋 **Corporate Governance Templates**: Premium templates for pull requests and issues to streamline team review cycles.
 
-| Field      | Value                                                              |
-| ---------- | ------------------------------------------------------------------ |
-| **Author** | Grzegorz Franus                                                    |
-| **Company**| EWARE                                                              |
-| **License**| [Apache-2.0](LICENSE)                                              |
-| **Repository**| [github-workflows](https://github.com/grzegorzfranus/github-workflows) |
+## 📋 Requirements
 
----
+- **Local Linters**: `yamllint` and `actionlint` are required for local verification before submitting code changes.
+- **GitHub Runner**: Workflows are designed and tested on standard `ubuntu-latest` environments.
 
-## Repository Workflows
+## 🚀 Quick Start
 
-| Workflow | File | Scope | Purpose & Description |
-| -------- | ---- | ----- | --------------------- |
-| **CI** | [`ci.yml`](.github/workflows/ci.yml) | Internal | Validates branch names, PR titles (Conventional Commits), and runs `yamllint` and `actionlint` gates. |
-| **Release** | [`release.yml`](.github/workflows/release.yml) | Internal | Triggers Google Release Please to automate changelogs, tags, and releases on merges to `main`. |
+To verify your workflow definitions locally:
 
----
-
-## Project Standards & Conventions
-
-To maintain a showcase-level repository structure, all developers must adhere to the following standards.
-
-### 1. Branch Naming Convention
-
-All branches created in this repository must use structured naming prefixes to ensure logical grouping and clean history:
-
-- `feature/` — New workflows, features, or enhancements (e.g., `feature/add-terraform-validation`)
-- `bugfix/` — Fixing a bug in a workflow (e.g., `bugfix/fix-checkout-sha`)
-- `hotfix/` — Critical quick-fixes applied to production workflows (e.g., `hotfix/security-patch`)
-- `release/` — Release branches (e.g., `release/v1.0.0`)
-- `docs/` — Documentation updates (e.g., `docs/update-readme`)
-- `refactor/` — Code refactoring without behavior changes (e.g., `refactor/cleanup-jobs`)
-- `test/` — Adding or fixing validation tests (e.g., `test/add-lint-scenario`)
-- `chore/` — Maintenance, updating dependencies or repository files (e.g., `chore/bump-actionlint`)
-- `ci/` — Pipeline-specific configurations and lint gates (e.g., `ci/harden-actionlint-config`)
-
-Branch naming is verified automatically in the CI pipeline on every Pull Request.
-
-### 2. Commit Message Convention
-
-This repository strictly enforces the [Conventional Commits](https://www.conventionalcommits.org/) standard. Commit messages trigger automated version bumps and changelog updates via Google Release Please.
-
-#### Format:
-```text
-<type>(<optional-scope>): <description>
-
-[optional body]
-
-[optional footer(s)]
-```
-
-#### Mapping to Version Bumps:
-- `feat:` — Minor version bump (e.g., `1.0.0` ➡️ `1.1.0`)
-- `fix:` — Patch version bump (e.g., `1.0.0` ➡️ `1.0.1`)
-- `feat!:` / `BREAKING CHANGE:` — Major version bump (e.g., `1.0.0` ➡️ `2.0.0`)
-- `docs:`, `chore:`, `refactor:`, `test:`, `ci:` — No version bump (changelog entry only)
-
----
-
-## Enterprise Security Hardening
-
-To satisfy enterprise-grade security compliance, we implement the following controls:
-
-### 1. Immutable Third-Party Actions (SHA Pinning)
-All external actions are pinned to their full 40-character commit SHA instead of mutable tags (e.g., `@v4`). A comment is appended to identify the human-readable version.
-```yaml
-- name: "Checkout repository"
-  uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-```
-
-### 2. Granular Job-Level Least Privilege
-To minimize the impact of token compromises, we disable global write permissions (`permissions: read-all` or `contents: read` at the workflow root) and only elevate permissions on specific jobs that strictly require write access.
-- **Example**: In `release.yml`, write permissions are elevated *only* for the `release-please` job, while validation steps remain read-only.
-
-### 3. Isolated CI Executions (`pipx`)
-No global python packages are installed on GitHub runners. Lint checks are executed within isolated, container-safe environments using `pipx run`.
-```yaml
-- name: "Lint workflow files"
-  run: pipx run yamllint .github/workflows/*.yml
-```
-
----
-
-## Local Verification & Quality Gates
-
-Before committing and pushing changes, developers are required to run quality checks locally. 
-
-### 1. Verify YAML Syntax
-Validate all YAML files for syntax and formatting:
 ```bash
+# 1. Run yamllint on workflow definitions
 pipx run yamllint .github/workflows/*.yml
-```
 
-### 2. Verify GitHub Actions Schemas
-Validate that the actions syntax and expressions are correct:
-```bash
+# 2. Run actionlint to check actions schema
 actionlint
 ```
 
-Both linters must pass cleanly (0 errors) before a Pull Request is merged. The final status check is consolidated into a single `Merge Check` job, which is a required check in the repository's branch protection rules.
+## ⚙️ Configuration
+
+### 1. Branch Naming Convention
+
+All branches created in this repository must use category prefixes to ensure a clean history:
+
+- `feature/` — New workflows, features, or enhancements
+- `bugfix/` — Fixing a bug in a workflow
+- `hotfix/` — Critical quick-fixes applied to production
+- `docs/` — Documentation updates
+- `refactor/` — Code refactoring without behavior changes
+- `test/` — Adding or fixing validation tests
+- `chore/` — Maintenance, updating dependencies
+- `ci/` — Pipeline-specific configurations and lint gates
+
+### 2. Commit Message Convention
+
+This repository strictly enforces Conventional Commits:
+
+- `feat:` — Minor version bump (e.g. `1.0.0` ➡️ `1.1.0`)
+- `fix:` — Patch version bump (e.g. `1.0.0` ➡️ `1.0.1`)
+- `feat!:` / `BREAKING CHANGE:` — Major version bump (e.g. `1.0.0` ➡️ `2.0.0`)
+- `docs:`, `chore:`, `refactor:`, `test:`, `ci:` — Changelog entry only (no bump)
+
+## 🛡️ Security Features
+
+- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`).
+- ✅ **Minimal Job Permissions**: Jobs elevate access only when required (e.g. `release-please` has `contents: write`, validation has `contents: read`).
+- ✅ **Isolated Linters**: Zero global pip packages; using `pipx` run commands.
+- ✅ **Automated Branch Name Gate**: Rejects PR branches failing naming conventions.
+- ✅ **Automated PR Title Gate**: Rejects PRs failing Conventional Commits formats.
+
+## 📁 File Structure
+
+```
+github-workflows/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   ├── feature_request.md
+│   │   └── task.md
+│   ├── workflows/
+│   │   ├── ci.yml                     # Validator CI pipeline
+│   │   └── release.yml                # Release Please automation
+│   ├── pull_request_template.md       # PR checklist template
+│   └── RELEASE_TEMPLATE.md            # Release description template
+├── .gitignore                         # Git ignore configurations
+├── .release-please-manifest.json      # Google Release Please version tracking
+├── .yamllint                          # yamllint settings
+├── CHANGELOG.md                       # Repository changelog
+├── LICENSE                            # Apache-2.0 License
+├── README.md                          # This documentation
+└── release-please-config.json         # Google Release Please config
+```
