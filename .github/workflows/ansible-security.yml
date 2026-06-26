@@ -1,0 +1,103 @@
+---
+name: "Ansible Security"
+
+on:
+  workflow_call:
+    inputs:
+      enable-trufflehog:
+        description: "Enable TruffleHog secret scanning"
+        type: boolean
+        default: true
+      enable-trivy:
+        description: "Enable Trivy IaC security scans"
+        type: boolean
+        default: true
+      runner:
+        description: "Runner label to execute jobs on"
+        type: string
+        default: "ubuntu-latest"
+
+permissions:
+  contents: read
+
+jobs:
+  # ================================================================
+  # 1. SECRET DETECTION (TruffleHog)
+  # ================================================================
+  secret-scan:
+    name: "Scan for Secrets"
+    if: ${{ inputs.enable-trufflehog }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: "Run TruffleHog scanner"
+        uses: trufflesecurity/trufflehog@586f66d7886cd0b037c7c245d4a6e34ef357ab10 # v3.88.28
+
+  # ================================================================
+  # 2. SECURITY IaC SCAN (Trivy)
+  # ================================================================
+  iac-scan:
+    name: "Scan IaC Misconfigurations"
+    if: ${{ inputs.enable-trivy }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: "Create dummy .trivyignore if missing"
+        run: |
+          if [ ! -f .trivyignore ]; then
+            echo "# Empty trivyignore file" > .trivyignore
+          fi
+
+      - name: "Run Trivy IaC scan"
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          scanners: "misconfig"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+          format: "table"
+          trivyignores: ".trivyignore"
+        env:
+          TRIVY_MISCONFIG_SCANNERS: "ansible"
+
+  # ================================================================
+  # 3. SECURITY GATE
+  # ================================================================
+  security-gate:
+    name: "Security Gate"
+    needs: [secret-scan, iac-scan]
+    if: always()
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: "Evaluate results"
+        run: |
+          echo "Secret Scan (TruffleHog): ${{ needs.secret-scan.result }}"
+          echo "IaC Scan (Trivy):         ${{ needs.iac-scan.result }}"
+
+          has_failures=0
+
+          if [[ "${{ needs.secret-scan.result }}" == "failure" || "${{ needs.secret-scan.result }}" == "cancelled" ]]; then
+            echo "::error::TruffleHog secret scanning failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "${{ needs.iac-scan.result }}" == "failure" || "${{ needs.iac-scan.result }}" == "cancelled" ]]; then
+            echo "::error::Trivy IaC scanning failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "$has_failures" -ne 0 ]]; then
+            exit 1
+          fi
+
+          echo "All security scans passed successfully"
