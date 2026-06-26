@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.0...v1.2.1) (2026-06-26)
+
+
+### Documentation
+
+* **readme:** document modular reusable ansible workflows and usage ([#11](https://github.com/grzegorzfranus/github-workflows/issues/11)) ([02b7ee3](https://github.com/grzegorzfranus/github-workflows/commit/02b7ee3c5aeff55ccf672dfe1e9a67c4281c2d2a))
+
 ## [1.2.0](https://github.com/grzegorzfranus/github-workflows/compare/v1.1.2...v1.2.0) (2026-06-26)
 
 
