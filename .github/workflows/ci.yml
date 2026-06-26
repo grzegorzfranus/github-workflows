@@ -176,7 +176,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: "Run actionlint"
-        uses: raven-actions/actionlint@be60c441c91176b6d859c25608d085954a2a1bb4 # v2.0.0
+        uses: raven-actions/actionlint@205b530c5d9fa8f44ae9ed59f341a0db994aa6f8 # v2.1.2
 
   # ================================================================
   # 4. MERGE CHECK — Single mandatory gate for PR merges
