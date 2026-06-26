@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/grzegorzfranus/github-workflows/compare/v1.1.1...v1.1.2) (2026-06-26)
+
+
+### Bug Fixes
+
+* **ci:** allow dependabot branches and fix skipped checks in merge gate ([#7](https://github.com/grzegorzfranus/github-workflows/issues/7)) ([2d124b2](https://github.com/grzegorzfranus/github-workflows/commit/2d124b21030982da9f46bb590ee7416e22ddba07))
+
 ## [1.1.1](https://github.com/grzegorzfranus/github-workflows/compare/v1.1.0...v1.1.1) (2026-06-26)
 
 
