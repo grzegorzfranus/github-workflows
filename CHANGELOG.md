@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/grzegorzfranus/github-workflows/compare/v1.1.2...v1.2.0) (2026-06-26)
+
+
+### Features
+
+* **ci:** add modular enterprise reusable workflows for ansible ([#9](https://github.com/grzegorzfranus/github-workflows/issues/9)) ([9925ba2](https://github.com/grzegorzfranus/github-workflows/commit/9925ba2ec21b895c77390eb120c2c817984074a1))
+
 ## [1.1.2](https://github.com/grzegorzfranus/github-workflows/compare/v1.1.1...v1.1.2) (2026-06-26)
 
 
