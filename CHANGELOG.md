@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.1...v1.2.2) (2026-06-26)
+
+
+### Documentation
+
+* **readme:** remove agent skill references and clean up spacing ([#13](https://github.com/grzegorzfranus/github-workflows/issues/13)) ([054d872](https://github.com/grzegorzfranus/github-workflows/commit/054d8720b97eb7f4427a768da9480646ef549320))
+
 ## [1.2.1](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.0...v1.2.1) (2026-06-26)
 
 
