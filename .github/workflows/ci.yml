@@ -1,0 +1,223 @@
+---
+name: "CI"
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # ================================================================
+  # 1. BRANCH NAME VALIDATION (Pre-hook)
+  # ----------------------------------------------------------------
+  # Enforces Git branch naming conventions. Rejects PR branches
+  # that do not use one of the standard enterprise prefixes.
+  # Runs first to fail fast and save runner execution minutes.
+  # ================================================================
+  branch-name-lint:
+    name: "Branch Name Lint"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: "Validate branch name"
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Pass automatically if this is not a pull request (e.g., push to main)
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            {
+              echo "### ✅ Branch Name Validation Skipped"
+              echo "Branch validation is only enforced on Pull Requests."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          REGEX="^(feature|bugfix|hotfix|release|docs|refactor|test|chore|ci)/.+|^release-please--.*"
+
+          if [[ ! "$BRANCH_NAME" =~ $REGEX ]]; then
+            echo "::error::Invalid branch name: '$BRANCH_NAME'"
+
+            # Generate Job Summary for GitHub UI using grouped redirects to prevent SC2129
+            {
+              echo "### ❌ Branch Name Validation Failed"
+              echo ""
+              echo "The source branch name **'$BRANCH_NAME'** does not conform to the repository naming conventions."
+              echo ""
+              echo "#### 🧭 Allowed Prefixes"
+              echo "- \`feature/\` (e.g., \`feature/add-workflows\`)"
+              echo "- \`bugfix/\` (e.g., \`bugfix/fix-trufflehog-tag\`)"
+              echo "- \`hotfix/\` (e.g., \`hotfix/critical-vulnerability-patch\`)"
+              echo "- \`release/\` (e.g., \`release/v1.0.0\`)"
+              echo "- \`docs/\` (e.g., \`docs/update-readme\`)"
+              echo "- \`refactor/\` (e.g., \`refactor/cleanup-matrix\`)"
+              echo "- \`test/\` (e.g., \`test/add-molecule-scenario\`)"
+              echo "- \`chore/\` (e.g., \`chore/update-readme\`)"
+              echo "- \`ci/\` (e.g., \`ci/harden-actionlint\`)"
+              echo ""
+              echo "#### 💡 How to fix"
+              echo "Rename your branch locally using:"
+              echo "\`\`\`bash"
+              echo "git branch -m <new-name>"
+              echo "git push origin -u <new-name>"
+              echo "\`\`\`"
+              echo "Then close this PR and open a new one with the correct branch name."
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            exit 1
+          fi
+
+          {
+            echo "### ✅ Branch Name Validation Passed"
+            echo "Branch name **'$BRANCH_NAME'** conforms to conventions."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ================================================================
+  # 1b. PR TITLE VALIDATION (Pre-hook)
+  # ----------------------------------------------------------------
+  # Enforces Conventional Commits naming conventions on PR titles.
+  # Runs first to fail fast and save runner execution minutes.
+  # ================================================================
+  pr-title-lint:
+    name: "PR Title Lint"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: "Validate PR title"
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            {
+              echo "### ✅ PR Title Validation Skipped"
+              echo "PR title validation is only enforced on Pull Requests."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          REGEX="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_-]+\))?!?: .+$"
+
+          if [[ ! "$PR_TITLE" =~ $REGEX ]]; then
+            echo "::error::Invalid PR title: '$PR_TITLE'"
+            {
+              echo "### ❌ PR Title Validation Failed"
+              echo ""
+              echo "The Pull Request title **'$PR_TITLE'** does not conform to Conventional Commits."
+              echo ""
+              echo "#### 🧭 Allowed Format"
+              echo "\`<type>(<scope>)!: <description>\` (scope and ! are optional)"
+              echo ""
+              echo "#### 💡 Allowed Types"
+              echo "- \`feat\` — New features"
+              echo "- \`fix\` — Bug fixes"
+              echo "- \`docs\` — Documentation updates"
+              echo "- \`style\` — Code style changes (whitespace, formatting)"
+              echo "- \`refactor\` — Code refactoring without behavior changes"
+              echo "- \`perf\` — Performance improvements"
+              echo "- \`test\` — Test additions or corrections"
+              echo "- \`build\` — Build system or dependency updates"
+              echo "- \`ci\` — CI/CD configurations"
+              echo "- \`chore\` — General maintenance tasks"
+              echo "- \`revert\` — Reverting previous commits"
+              echo ""
+              echo "#### 💡 How to fix"
+              echo "Edit the title of this Pull Request on GitHub to match the specification (e.g., \`feat(ci): add pr title validation\`)."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo "### ✅ PR Title Validation Passed"
+            echo "PR title **'$PR_TITLE'** conforms to Conventional Commits."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ================================================================
+  # 2. YAML SYNTAX VALIDATION
+  # ----------------------------------------------------------------
+  # Validates all workflow definitions for correct YAML syntax
+  # using yamllint via pipx run (isolated environments).
+  # Depends on branch-name-lint and pr-title-lint.
+  # ================================================================
+  yaml-lint:
+    name: "YAML Lint"
+    needs: [branch-name-lint, pr-title-lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Lint workflow files"
+        run: pipx run yamllint .github/workflows/*.yml
+
+  # ================================================================
+  # 3. GITHUB ACTIONS SCHEMA VALIDATION
+  # ----------------------------------------------------------------
+  # Validates GitHub Actions-specific syntax.
+  # Depends on branch-name-lint and pr-title-lint.
+  # ================================================================
+  actions-lint:
+    name: "Actions Lint"
+    needs: [branch-name-lint, pr-title-lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Run actionlint"
+        uses: raven-actions/actionlint@be60c441c91176b6d859c25608d085954a2a1bb4 # v2.0.0
+
+  # ================================================================
+  # 4. MERGE CHECK — Single mandatory gate for PR merges
+  # ----------------------------------------------------------------
+  # Aggregates all validation results into a single status check.
+  # Configure this as the sole required check in branch protection
+  # rules. All linting jobs are hard requirements.
+  # ================================================================
+  merge-check:
+    name: "Merge Check"
+    needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: "Evaluate results"
+        run: |
+          echo "YAML Lint: ${{ needs.yaml-lint.result }}"
+          echo "Actions Lint: ${{ needs.actions-lint.result }}"
+          echo "Branch Name Lint: ${{ needs.branch-name-lint.result }}"
+          echo "PR Title Lint: ${{ needs.pr-title-lint.result }}"
+
+          if [[ "${{ needs.yaml-lint.result }}" != "success" ]]; then
+            echo "::error::YAML Lint failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.actions-lint.result }}" != "success" ]]; then
+            echo "::error::Actions Lint failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.branch-name-lint.result }}" != "success" ]]; then
+            echo "::error::Branch Name Lint failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.pr-title-lint.result }}" != "success" ]]; then
+            echo "::error::PR Title Lint failed"
+            exit 1
+          fi
+
+          echo "All validations passed"
