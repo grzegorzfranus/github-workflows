@@ -20,7 +20,7 @@ jobs:
   # Runs first to fail fast and save runner execution minutes.
   # ================================================================
   branch-name-lint:
-    name: "Branch Name Lint"
+    name: "Validate Branch Naming"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,7 +85,7 @@ jobs:
   # Runs first to fail fast and save runner execution minutes.
   # ================================================================
   pr-title-lint:
-    name: "PR Title Lint"
+    name: "Validate PR Title Format"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -147,7 +147,7 @@ jobs:
   # Depends on branch-name-lint and pr-title-lint.
   # ================================================================
   yaml-lint:
-    name: "YAML Lint"
+    name: "Validate YAML Syntax"
     needs: [branch-name-lint, pr-title-lint]
     runs-on: ubuntu-latest
     permissions:
@@ -166,7 +166,7 @@ jobs:
   # Depends on branch-name-lint and pr-title-lint.
   # ================================================================
   actions-lint:
-    name: "Actions Lint"
+    name: "Validate GitHub Actions"
     needs: [branch-name-lint, pr-title-lint]
     runs-on: ubuntu-latest
     permissions:
@@ -186,7 +186,7 @@ jobs:
   # rules. All linting jobs are hard requirements.
   # ================================================================
   merge-check:
-    name: "Merge Check"
+    name: "Merge Check Gate"
     needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint]
     if: always()
     runs-on: ubuntu-latest
