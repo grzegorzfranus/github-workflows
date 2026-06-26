@@ -96,6 +96,11 @@ github-workflows/
 │   ├── PULL_REQUEST_TEMPLATE/
 │   │   └── pull_request_template.md   # PR checklist template
 │   ├── workflows/
+│   │   ├── ansible-ci.yml             # Ansible CI orchestrator
+│   │   ├── ansible-lint.yml           # Reusable Ansible lint validations
+│   │   ├── ansible-molecule.yml       # Reusable Molecule test runner
+│   │   ├── ansible-publish.yml        # Reusable Galaxy publish template
+│   │   ├── ansible-security.yml       # Reusable TruffleHog & Trivy scans
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
 │   └── dependabot.yml                 # Actions dependency updates config
@@ -114,6 +119,78 @@ github-workflows/
 ├── package.json                       # Node dependencies file
 └── release-please-config.json         # Google Release Please config
 ```
+
+## 📦 Reusable Workflows
+
+This repository provides modular, reusable workflows designed to standardize quality checks across your Ansible role repositories.
+
+### 1. Ansible CI Orchestrator (`ansible-ci.yml`)
+
+The primary CI pipeline. It coordinates the execution of linting, security, and functional integration tests in sequence.
+
+**Usage Example:**
+Add the following to `.github/workflows/ci.yml` in your Ansible role repository:
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ansible-ci:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.2.0
+    with:
+      ansible-lint-profile: "production"
+      molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
+      molecule-scenarios: '["default"]'
+      python-version: "3.12"
+      enable-trufflehog: true
+      enable-trivy: true
+      enable-galaxy-metadata-check: true
+```
+
+### 2. Ansible Galaxy Publish (`ansible-publish.yml`)
+
+Validates metdata formats and description length, and publishes tagged role releases to Ansible Galaxy.
+
+**Usage Example:**
+Add the following to `.github/workflows/publish.yml` in your Ansible role repository:
+
+```yaml
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v1.2.0
+    with:
+      python-version: "3.12"
+    secrets:
+      galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}
+```
+
+### 3. Granular Reusable Workflows
+
+If you need to run specific suites independently, you can invoke the low-level workflows directly:
+- **[`ansible-lint.yml`](.github/workflows/ansible-lint.yml)**: Static YAML and Ansible linting.
+- **[`ansible-security.yml`](.github/workflows/ansible-security.yml)**: TruffleHog secrets detection and Trivy IaC scans.
+- **[`ansible-molecule.yml`](.github/workflows/ansible-molecule.yml)**: Syntax checks and Molecule testing matrix.
+
 
 ## 📝 License
 
