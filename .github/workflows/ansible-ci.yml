@@ -1,0 +1,145 @@
+---
+name: "Ansible CI Orchestrator"
+
+on:
+  workflow_call:
+    inputs:
+      ansible-lint-profile:
+        description: "ansible-lint profile (e.g., shared, production)"
+        type: string
+        default: "production"
+      molecule-scenarios:
+        description: "JSON array of scenarios to run (e.g., '[\"default\"]')"
+        type: string
+        default: '["default"]'
+      molecule-distros:
+        description: "JSON array of distros to test against (e.g., '[\"ubuntu2404\", \"debian12\", \"rockylinux9\"]')"
+        type: string
+        default: '["ubuntu2404", "debian12", "rockylinux9"]'
+      python-version:
+        description: "Python version to use"
+        type: string
+        default: "3.12"
+      enable-trufflehog:
+        description: "Enable TruffleHog secret scanning"
+        type: boolean
+        default: true
+      enable-trivy:
+        description: "Enable Trivy IaC security scans"
+        type: boolean
+        default: true
+      enable-galaxy-metadata-check:
+        description: "Enable Galaxy meta/main.yml validation"
+        type: boolean
+        default: true
+      molecule-timeout:
+        description: "Timeout in minutes for Molecule test jobs"
+        type: number
+        default: 30
+      requirements-ci-file:
+        description: "Path to CI requirements.txt for pinned tool versions (empty = use defaults)"
+        type: string
+        default: ""
+      runner:
+        description: "Runner label to execute jobs on"
+        type: string
+        default: "ubuntu-latest"
+
+permissions:
+  contents: read
+
+jobs:
+  # ================================================================
+  # 1. RUN LINT WORKFLOW
+  # ================================================================
+  ansible-lint:
+    name: "Lint"
+    uses: ./.github/workflows/ansible-lint.yml
+    with:
+      ansible-lint-profile: ${{ inputs.ansible-lint-profile }}
+      python-version: ${{ inputs.python-version }}
+      requirements-ci-file: ${{ inputs.requirements-ci-file }}
+      enable-galaxy-metadata-check: ${{ inputs.enable-galaxy-metadata-check }}
+      runner: ${{ inputs.runner }}
+
+  # ================================================================
+  # 2. RUN SECURITY WORKFLOW
+  # ================================================================
+  ansible-security:
+    name: "Security"
+    uses: ./.github/workflows/ansible-security.yml
+    with:
+      enable-trufflehog: ${{ inputs.enable-trufflehog }}
+      enable-trivy: ${{ inputs.enable-trivy }}
+      runner: ${{ inputs.runner }}
+
+  # ================================================================
+  # 3. RUN MOLECULE INTEGRATION TESTS
+  # ----------------------------------------------------------------
+  # Runs after lint and security checks pass to conserve resources.
+  # ================================================================
+  ansible-molecule:
+    name: "Test"
+    needs: [ansible-lint, ansible-security]
+    uses: ./.github/workflows/ansible-molecule.yml
+    with:
+      molecule-scenarios: ${{ inputs.molecule-scenarios }}
+      molecule-distros: ${{ inputs.molecule-distros }}
+      python-version: ${{ inputs.python-version }}
+      molecule-timeout: ${{ inputs.molecule-timeout }}
+      requirements-ci-file: ${{ inputs.requirements-ci-file }}
+      runner: ${{ inputs.runner }}
+
+  # ================================================================
+  # 4. CONSOLIDATED MERGE GATE
+  # ----------------------------------------------------------------
+  # Single status target for branch protection.
+  # ================================================================
+  merge-check:
+    name: "Merge Check Gate"
+    needs: [ansible-lint, ansible-security, ansible-molecule]
+    if: always()
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: "Evaluate results"
+        run: |
+          echo "Ansible Lint:     ${{ needs.ansible-lint.result }}"
+          echo "Ansible Security: ${{ needs.ansible-security.result }}"
+          echo "Ansible Molecule: ${{ needs.ansible-molecule.result }}"
+
+          has_failures=0
+
+          if [[ "${{ needs.ansible-lint.result }}" == "failure" || "${{ needs.ansible-lint.result }}" == "cancelled" ]]; then
+            echo "::error::Ansible Lint validation failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "${{ needs.ansible-security.result }}" == "failure" || "${{ needs.ansible-security.result }}" == "cancelled" ]]; then
+            echo "::error::Ansible Security scan failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "${{ needs.ansible-molecule.result }}" == "failure" || "${{ needs.ansible-molecule.result }}" == "cancelled" ]]; then
+            echo "::error::Ansible Molecule tests failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "$has_failures" -ne 0 ]]; then
+            exit 1
+          fi
+
+          echo "All checks passed successfully"
+
+      - name: "Generate summary"
+        if: always()
+        run: |
+          {
+            echo "## 🔍 Ansible CI Results"
+            echo ""
+            echo "| Check Suite | Result |"
+            echo "|-------------|--------|"
+            echo "| Lint validation | ${{ needs.ansible-lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| Security scans | ${{ needs.ansible-security.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| Molecule integration tests | ${{ needs.ansible-molecule.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
