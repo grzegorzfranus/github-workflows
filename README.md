@@ -57,6 +57,13 @@ This repository strictly enforces Conventional Commits:
 - `feat!:` / `BREAKING CHANGE:` — Major version bump (e.g. `1.0.0` ➡️ `2.0.0`)
 - `docs:`, `chore:`, `refactor:`, `test:`, `ci:` — Changelog entry only (no bump)
 
+### 3. Issue & PR Templates
+
+All issues, tasks, and bug reports created in this repository must strictly follow the templates located in [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) (which comply with the `task-creation` skill format).
+
+Similarly, all Pull Requests must be structured according to the format defined in [`.github/pull_request_template.md`](.github/pull_request_template.md) (which complies with the `git-workflow` skill format).
+
+
 ## 🛡️ Security Features
 
 - ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`).
@@ -77,8 +84,7 @@ github-workflows/
 │   ├── workflows/
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
-│   ├── pull_request_template.md       # PR checklist template
-│   └── RELEASE_TEMPLATE.md            # Release description template
+│   └── pull_request_template.md       # PR checklist template
 ├── .gitignore                         # Git ignore configurations
 ├── .release-please-manifest.json      # Google Release Please version tracking
 ├── .yamllint                          # yamllint settings
