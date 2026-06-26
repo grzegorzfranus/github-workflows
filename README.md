@@ -69,9 +69,9 @@ This repository strictly enforces Conventional Commits:
 
 ### 3. Issue & PR Templates
 
-All issues, tasks, and bug reports created in this repository must strictly follow the interactive forms defined under [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) (which comply with the `task-creation` skill format).
+All issues, tasks, and bug reports created in this repository must strictly follow the interactive forms defined under [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/).
 
-Similarly, all Pull Requests must be structured according to the template located under [`.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`](.github/PULL_REQUEST_TEMPLATE/pull_request_template.md) (which complies with the `git-workflow` skill format).
+Similarly, all Pull Requests must be structured according to the template located under [`.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`](.github/PULL_REQUEST_TEMPLATE/pull_request_template.md).
 
 
 
@@ -191,7 +191,6 @@ If you need to run specific suites independently, you can invoke the low-level w
 - **[`ansible-security.yml`](.github/workflows/ansible-security.yml)**: TruffleHog secrets detection and Trivy IaC scans.
 - **[`ansible-molecule.yml`](.github/workflows/ansible-molecule.yml)**: Syntax checks and Molecule testing matrix.
 
-
 ## 📝 License
 
 This project is licensed under the Apache-2.0 License - see the LICENSE file for details.
@@ -199,4 +198,3 @@ This project is licensed under the Apache-2.0 License - see the LICENSE file for
 ## 👥 Author Information
 
 This repository was created by [Grzegorz Franus](https://github.com/grzegorzfranus).
-
