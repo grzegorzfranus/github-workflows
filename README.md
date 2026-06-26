@@ -87,3 +87,12 @@ github-workflows/
 ├── README.md                          # This documentation
 └── release-please-config.json         # Google Release Please config
 ```
+
+## 📝 License
+
+This project is licensed under the Apache-2.0 License - see the LICENSE file for details.
+
+## 👥 Author Information
+
+This repository was created by [Grzegorz Franus](https://github.com/grzegorzfranus).
+
