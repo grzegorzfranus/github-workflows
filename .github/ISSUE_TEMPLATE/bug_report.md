@@ -7,21 +7,19 @@ assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## 1. What
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+- Describe the bug and what went wrong. Include step-by-step reproduction steps if possible.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## 2. Why
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+- Motivation and context (e.g. impact on users, environments affected).
 
-**Additional context**
-Add any other context about the problem here.
+## 3. Value
+
+- Technical value of fixing this issue (e.g., error prevention, stabilizing builds).
+
+## 4. Acceptance Criteria
+
+- [ ] Bug is resolved and cannot be reproduced.
+- [ ] Automated/manual tests pass.

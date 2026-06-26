@@ -1,23 +1,15 @@
-# Pull Request
+## 1. ✨ What this PR does
 
-## Description
+- Description of the changes.
 
-Provide a brief summary of the changes introduced by this Pull Request.
+## 2. 🔍 Why
 
-## Type of Change
+- Explanation of the problem or motivation.
 
-- [ ] `feat:` New features
-- [ ] `fix:` Bug fixes
-- [ ] `docs:` Documentation updates
-- [ ] `refactor:` Code refactoring without behavior changes
-- [ ] `perf:` Performance improvements
-- [ ] `test:` Test additions or corrections
-- [ ] `ci:` CI/CD configurations
-- [ ] `chore:` General maintenance tasks
+## 3. 💡 Value
 
-## Checklist
+- Business or technical value.
 
-- [ ] My branch name conforms to repository naming conventions (`feature/*`, `bugfix/*`, `chore/*`, `docs/*`, `ci/*`, etc.)
-- [ ] My PR title conforms to Conventional Commits format
-- [ ] I have tested these changes locally using `yamllint` and `actionlint`
-- [ ] All status checks pass successfully
+## 4. ✅ Local Verification
+
+- Steps to verify the changes (commands, manual tests).

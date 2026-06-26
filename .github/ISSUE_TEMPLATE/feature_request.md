@@ -7,14 +7,19 @@ assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## 1. What
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+- Describe the requested feature and the proposed solution.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## 2. Why
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+- Motivation and context (e.g. why is this needed, what problem does it solve).
+
+## 3. Value
+
+- Business or technical value (e.g., improves developer efficiency, improves security).
+
+## 4. Acceptance Criteria
+
+- [ ] Feature is implemented and verified.
+- [ ] Documentation is updated in README.md.
