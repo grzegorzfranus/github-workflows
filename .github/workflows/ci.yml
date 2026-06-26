@@ -39,7 +39,7 @@ jobs:
             exit 0
           fi
 
-          REGEX="^(feature|bugfix|hotfix|release|docs|refactor|test|chore|ci)/.+|^release-please--.*"
+          REGEX="^(feature|bugfix|hotfix|release|docs|refactor|test|chore|ci)/.+|^release-please--.*|^dependabot/.+"
 
           if [[ ! "$BRANCH_NAME" =~ $REGEX ]]; then
             echo "::error::Invalid branch name: '$BRANCH_NAME'"
@@ -200,23 +200,29 @@ jobs:
           echo "Branch Name Lint: ${{ needs.branch-name-lint.result }}"
           echo "PR Title Lint: ${{ needs.pr-title-lint.result }}"
 
-          if [[ "${{ needs.yaml-lint.result }}" != "success" ]]; then
-            echo "::error::YAML Lint failed"
-            exit 1
+          has_failures=0
+
+          if [[ "${{ needs.branch-name-lint.result }}" == "failure" || "${{ needs.branch-name-lint.result }}" == "cancelled" ]]; then
+            echo "::error::Branch Name Validation failed or was cancelled"
+            has_failures=1
           fi
 
-          if [[ "${{ needs.actions-lint.result }}" != "success" ]]; then
-            echo "::error::Actions Lint failed"
-            exit 1
+          if [[ "${{ needs.pr-title-lint.result }}" == "failure" || "${{ needs.pr-title-lint.result }}" == "cancelled" ]]; then
+            echo "::error::PR Title Validation failed or was cancelled"
+            has_failures=1
           fi
 
-          if [[ "${{ needs.branch-name-lint.result }}" != "success" ]]; then
-            echo "::error::Branch Name Lint failed"
-            exit 1
+          if [[ "${{ needs.yaml-lint.result }}" == "failure" || "${{ needs.yaml-lint.result }}" == "cancelled" ]]; then
+            echo "::error::YAML Lint failed or was cancelled"
+            has_failures=1
           fi
 
-          if [[ "${{ needs.pr-title-lint.result }}" != "success" ]]; then
-            echo "::error::PR Title Lint failed"
+          if [[ "${{ needs.actions-lint.result }}" == "failure" || "${{ needs.actions-lint.result }}" == "cancelled" ]]; then
+            echo "::error::Actions Lint failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "$has_failures" -ne 0 ]]; then
             exit 1
           fi
 
