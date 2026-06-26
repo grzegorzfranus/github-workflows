@@ -2,6 +2,9 @@
 .vscode/
 .idea/
 .cursor/
+node_modules/
+package-lock.json
+
 
 # Python virtual environment directories
 .env

@@ -23,15 +23,25 @@ This repository serves as a model blueprint ("wzór") for corporate workflows. I
 
 ## 🚀 Quick Start
 
-To verify your workflow definitions locally:
+### 1. Development Setup
+
+Initialize development dependencies and activate local Git Hooks:
+```bash
+npm install
+```
+
+### 2. Manual Verification
+
+To verify your workflow definitions manually:
 
 ```bash
-# 1. Run yamllint on workflow definitions
+# Run yamllint on workflow definitions
 pipx run yamllint .github/workflows/*.yml
 
-# 2. Run actionlint to check actions schema
+# Run actionlint to check actions schema
 actionlint
 ```
+
 
 ## ⚙️ Configuration
 
@@ -85,17 +95,24 @@ github-workflows/
 │   │   └── task.yml                   # Interactive Task chore form
 │   ├── PULL_REQUEST_TEMPLATE/
 │   │   └── pull_request_template.md   # PR checklist template
-│   └── workflows/
-│       ├── ci.yml                     # Validator CI pipeline
-│       └── release.yml                # Release Please automation
+│   ├── workflows/
+│   │   ├── ci.yml                     # Validator CI pipeline
+│   │   └── release.yml                # Release Please automation
+│   └── dependabot.yml                 # Actions dependency updates config
+├── .husky/                            # Git hooks configuration (Husky)
+│   ├── commit-msg                     # Commit message validation hook
+│   └── pre-commit                     # Pre-commit workflows validation hook
+├── scripts/
+│   └── validate.sh                    # Pre-commit validation runner script
 ├── .gitignore                         # Git ignore configurations
 ├── .release-please-manifest.json      # Google Release Please version tracking
 ├── .yamllint                          # yamllint settings
 ├── CHANGELOG.md                       # Repository changelog
 ├── LICENSE                            # Apache-2.0 License
 ├── README.md                          # This documentation
+├── commitlint.config.js               # Commitlint config file
+├── package.json                       # Node dependencies file
 └── release-please-config.json         # Google Release Please config
-
 ```
 
 ## 📝 License
