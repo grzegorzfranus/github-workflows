@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.3...v1.2.4) (2026-07-03)
+
+
+### Bug Fixes
+
+* configure dependabot to trigger release-please version bumps ([#22](https://github.com/grzegorzfranus/github-workflows/issues/22)) ([6f7cf88](https://github.com/grzegorzfranus/github-workflows/commit/6f7cf88baf920eff29e1a1e39c768408bd0b74d0))
+
 ## [1.2.3](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.2...v1.2.3) (2026-07-03)
 
 
