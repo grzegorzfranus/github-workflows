@@ -6,20 +6,55 @@
 
 Centralized, reusable, and secure GitHub Actions workflows and configuration templates designed to establish enterprise-grade CI/CD and repository hygiene standards.
 
-This repository serves as a model blueprint ("wzór") for corporate workflows. It incorporates strict security hardening, automated release cycles, and automated local lints.
+This repository serves as a model blueprint ("wzór") for corporate workflows. It incorporates strict security hardening, automated release cycles, and automated local lints. The repository is designed to host multiple workflow categories — currently providing **Ansible** CI/CD pipelines, with additional technology stacks planned for the future.
 
 ## ✨ Features
 
 - 🔒 **Immutable Third-Party Actions**: All external actions are pinned to their full 40-character commit SHA instead of mutable tags.
 - 🔑 **Job-Level Least Privilege**: Strict job-level GITHUB_TOKEN permissions (`contents: read` default) to prevent unauthorized access.
-- 🚀 **Isolated CI Executions**: Lint checks run inside clean environments using `pipx run` to prevent python package pollution.
+- 🚀 **Isolated CI Executions**: Internal CI lint checks (`ci.yml`) run inside clean environments using `pipx run` to prevent python package pollution. Reusable Ansible workflows use isolated `pip install` within runner virtual environments.
 - 🤖 **Automated Release Management**: Zero-touch versioning, tagging, and changelog generation using Google Release Please.
 - 📋 **Corporate Governance Templates**: Premium templates for pull requests and issues to streamline team review cycles.
 
+## 🎯 Architecture
+
+### Ansible CI Pipeline
+
+The Ansible CI orchestrator coordinates all quality checks in a strict dependency chain:
+
+```mermaid
+graph TD
+    A["Consumer Repository<br/>.github/workflows/ci.yml"] -->|"uses: ...ansible-ci.yml@v1"| B["ansible-ci.yml<br/>(Orchestrator)"]
+    B -->|"Job 1"| C["ansible-lint.yml<br/>yamllint + ansible-lint<br/>+ Galaxy metadata check"]
+    B -->|"Job 2"| D["ansible-security.yml<br/>TruffleHog + Trivy"]
+    C --> E["ansible-molecule.yml<br/>Syntax check + Molecule<br/>matrix (distro × scenario)"]
+    D --> E
+    E --> F["merge-check<br/>(Gate — aggregates all results)"]
+
+    style A fill:#2d333b,stroke:#539bf5,color:#adbac7
+    style B fill:#2d333b,stroke:#f47067,color:#adbac7
+    style C fill:#2d333b,stroke:#57ab5a,color:#adbac7
+    style D fill:#2d333b,stroke:#e5534b,color:#adbac7
+    style E fill:#2d333b,stroke:#c69026,color:#adbac7
+    style F fill:#2d333b,stroke:#986ee2,color:#adbac7
+```
+
+**Execution order**: Lint and Security run in parallel → Molecule waits for both → Merge Check Gate evaluates all results.
+
 ## 📋 Requirements
 
+### For developers of this repository
+
+- **Node.js**: Required for Husky Git hooks and commitlint (`npm install`).
 - **Local Linters**: `yamllint` and `actionlint` are required for local verification before submitting code changes.
 - **GitHub Runner**: Workflows are designed and tested on standard `ubuntu-latest` environments.
+
+### For consumers (Ansible role repositories)
+
+- **GitHub Actions**: The calling repository must use GitHub Actions with `workflow_call` support.
+- **Permissions**: Caller workflows must declare `permissions: contents: read` (minimum).
+- **Secrets** (publish only): `GALAXY_API_KEY` must be configured as a repository secret for `ansible-publish.yml`.
+- **Supported Python**: `3.12` (default, configurable via `python-version` input).
 
 ## 🚀 Quick Start
 
@@ -41,7 +76,6 @@ pipx run yamllint .github/workflows/*.yml
 # Run actionlint to check actions schema
 actionlint
 ```
-
 
 ## ⚙️ Configuration
 
@@ -73,15 +107,272 @@ All issues, tasks, and bug reports created in this repository must strictly foll
 
 Similarly, all Pull Requests must be structured according to the template located under [`.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`](.github/PULL_REQUEST_TEMPLATE/pull_request_template.md).
 
+## 📦 Reusable Workflows
 
+This repository provides modular, reusable workflows organized by technology stack. Additional workflow categories will be added as the repository evolves.
+
+### Ansible Workflows
+
+Workflows designed to standardize quality checks across Ansible role repositories.
+
+#### 1. Ansible CI Orchestrator (`ansible-ci.yml`)
+
+The primary CI pipeline. It coordinates the execution of linting, security, and functional integration tests in a strict dependency chain. Contains a final Merge Check Gate that aggregates all results into a single required status check.
+
+**Inputs:**
+
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `ansible-lint-profile` | string | no | `"production"` | ansible-lint profile (e.g., `shared`, `production`) |
+| `molecule-scenarios` | string | no | `'["default"]'` | JSON array of Molecule scenarios to run |
+| `molecule-distros` | string | no | `'["ubuntu2404", "debian12", "rockylinux9"]'` | JSON array of distro containers to test against |
+| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
+| `enable-trufflehog` | boolean | no | `true` | Enable TruffleHog secret scanning |
+| `enable-trivy` | boolean | no | `true` | Enable Trivy IaC security scans |
+| `enable-galaxy-metadata-check` | boolean | no | `true` | Enable Galaxy `meta/main.yml` validation |
+| `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
+| `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
+| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+
+**Usage Example:**
+
+Add the following to `.github/workflows/ci.yml` in your Ansible role repository:
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ansible-ci:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.2.0
+    with:
+      ansible-lint-profile: "production"
+      molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
+      molecule-scenarios: '["default"]'
+      python-version: "3.12"
+      enable-trufflehog: true
+      enable-trivy: true
+      enable-galaxy-metadata-check: true
+```
+
+---
+
+#### 2. Ansible Galaxy Publish (`ansible-publish.yml`)
+
+Validates metadata formats and description length, and publishes tagged role releases to Ansible Galaxy. Includes retry logic with exponential backoff (up to 3 attempts).
+
+**Inputs:**
+
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
+| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+
+**Secrets:**
+
+| Secret | Required | Description |
+| --- | --- | --- |
+| `galaxy-api-key` | **yes** | Ansible Galaxy API Key for role publishing |
+
+**Usage Example:**
+
+Add the following to `.github/workflows/publish.yml` in your Ansible role repository:
+
+```yaml
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v1.2.0
+    with:
+      python-version: "3.12"
+    secrets:
+      galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}
+```
+
+---
+
+#### 3. Ansible Lint (`ansible-lint.yml`)
+
+Static YAML and Ansible linting with optional Galaxy metadata validation. Contains yamllint, ansible-lint, and Galaxy metadata check jobs with a final Lint Gate.
+
+**Inputs:**
+
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `ansible-lint-profile` | string | no | `"production"` | ansible-lint profile (e.g., `shared`, `production`) |
+| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
+| `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
+| `enable-galaxy-metadata-check` | boolean | no | `true` | Enable Galaxy `meta/main.yml` validation |
+| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+
+**Usage Example:**
+
+```yaml
+jobs:
+  lint:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v1.2.0
+    with:
+      ansible-lint-profile: "production"
+      enable-galaxy-metadata-check: true
+```
+
+---
+
+#### 4. Ansible Security (`ansible-security.yml`)
+
+TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be independently enabled or disabled. Contains a Security Gate job.
+
+**Inputs:**
+
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `enable-trufflehog` | boolean | no | `true` | Enable TruffleHog secret scanning |
+| `enable-trivy` | boolean | no | `true` | Enable Trivy IaC security scans (HIGH/CRITICAL severity) |
+| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+
+**Usage Example:**
+
+```yaml
+jobs:
+  security:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v1.2.0
+    with:
+      enable-trufflehog: true
+      enable-trivy: true
+```
+
+---
+
+#### 5. Ansible Molecule Testing (`ansible-molecule.yml`)
+
+Syntax checks and Molecule integration test matrix. Creates a test matrix from `molecule-scenarios × molecule-distros`. Contains a Molecule Gate job.
+
+**Inputs:**
+
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `molecule-scenarios` | string | no | `'["default"]'` | JSON array of Molecule scenarios to run |
+| `molecule-distros` | string | no | `'["ubuntu2404", "debian12", "rockylinux9"]'` | JSON array of distro containers to test against |
+| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
+| `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
+| `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
+| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+
+**Usage Example:**
+
+```yaml
+jobs:
+  molecule:
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v1.2.0
+    with:
+      molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
+      molecule-scenarios: '["default"]'
+      python-version: "3.12"
+      molecule-timeout: 30
+```
+
+## 🔄 Versioning & Upgrade
+
+### Versioning Strategy
+
+This repository uses [Semantic Versioning](https://semver.org/) with automated releases via [Google Release Please](https://github.com/googleapis/release-please).
+
+**How to reference workflows in your repository:**
+
+```yaml
+# Recommended — pin to a specific release tag
+uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.2.0
+
+# Alternative — pin to a commit SHA (most secure, immutable)
+uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@abc123def456
+```
+
+> **Note**: Referencing `@main` is **not recommended** for production use — it tracks the latest commit and may include untested changes.
+
+### Upgrade Procedure
+
+1. Check the [Releases page](https://github.com/grzegorzfranus/github-workflows/releases) for the latest version and changelog.
+2. Update the version tag in your caller workflow:
+
+   ```diff
+   -    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.1.0
+   +    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.2.0
+   ```
+
+3. Review the changelog for new inputs, changed defaults, or breaking changes.
+4. Submit a pull request in your repository and verify CI passes.
+
+### Breaking Changes Policy
+
+- **Major version bump** (`v1 → v2`): May remove inputs, change defaults, or alter behavior. Review the changelog carefully.
+- **Minor version bump** (`v1.1 → v1.2`): New inputs with backward-compatible defaults. Safe to upgrade.
+- **Patch version bump** (`v1.1.0 → v1.1.1`): Bug fixes only. Safe to upgrade.
+
+## 🔍 Verification
+
+After integrating the reusable workflows, verify they work correctly:
+
+### Check CI Status
+
+1. Open a pull request in your Ansible role repository.
+2. Navigate to the **Actions** tab → verify the following jobs appear and pass:
+   - `Lint` → yamllint, ansible-lint, Galaxy metadata check
+   - `Security` → TruffleHog, Trivy
+   - `Test` → Syntax check, Molecule matrix
+   - `Merge Check Gate` → aggregated result
+
+### Verify Publish Workflow
+
+1. Create and push a new version tag: `git tag v1.0.0 && git push origin v1.0.0`
+2. Navigate to the **Actions** tab → verify the Publish workflow runs successfully.
+3. Check [Ansible Galaxy](https://galaxy.ansible.com/) for your published role.
+
+### Common Issues
+
+| Issue | Cause | Solution |
+| --- | --- | --- |
+| `Merge Check Gate` fails | One or more upstream jobs failed or were cancelled | Check individual job logs for errors |
+| Publish fails with 403 | Invalid or missing `GALAXY_API_KEY` | Verify the secret is configured in repository settings |
+| Molecule timeout | Tests exceed the default 30-minute limit | Increase `molecule-timeout` input |
+| `meta/main.yml` validation fails | Missing required Galaxy metadata fields | Ensure `author`, `description`, `license`, `min_ansible_version`, and `platforms` are present |
 
 ## 🛡️ Security Features
 
-- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`).
+- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0`).
 - ✅ **Minimal Job Permissions**: Jobs elevate access only when required (e.g. `release-please` has `contents: write`, validation has `contents: read`).
-- ✅ **Isolated Linters**: Zero global pip packages; using `pipx` run commands.
+- ✅ **Isolated Linters**: Internal CI uses `pipx run` for zero-install linting; reusable workflows use isolated `pip install` within runner environments.
 - ✅ **Automated Branch Name Gate**: Rejects PR branches failing naming conventions.
 - ✅ **Automated PR Title Gate**: Rejects PRs failing Conventional Commits formats.
+- ✅ **Trivy IaC Scanning**: Fails on HIGH/CRITICAL severity findings with `exit-code: 1`.
+- ✅ **TruffleHog Secret Scanning**: Full history scan (`fetch-depth: 0`) for leaked secrets.
+
+### Pinned Action Versions
+
+| Action | SHA | Version |
+| --- | --- | --- |
+| `actions/checkout` | `9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0` | v7.0.0 |
+| `actions/setup-python` | `ece7cb06caefa5fff74198d8649806c4678c61a1` | v6.3.0 |
+| `actions/cache` | `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` | v6.1.0 |
+| `trufflesecurity/trufflehog` | `00155c9dc586f34d189adc83d3ac2698c2ec551f` | v3.88.28 |
+| `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25` | v0.36.0 |
 
 ## 📁 File Structure
 
@@ -120,76 +411,23 @@ github-workflows/
 └── release-please-config.json         # Google Release Please config
 ```
 
-## 📦 Reusable Workflows
+## 🤝 Contributing
 
-This repository provides modular, reusable workflows designed to standardize quality checks across your Ansible role repositories.
+Contributions, bug reports, and feature requests are welcome!
 
-### 1. Ansible CI Orchestrator (`ansible-ci.yml`)
-
-The primary CI pipeline. It coordinates the execution of linting, security, and functional integration tests in sequence.
-
-**Usage Example:**
-Add the following to `.github/workflows/ci.yml` in your Ansible role repository:
-
-```yaml
-name: CI
-
-on:
-  pull_request:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  ansible-ci:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.2.0
-    with:
-      ansible-lint-profile: "production"
-      molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
-      molecule-scenarios: '["default"]'
-      python-version: "3.12"
-      enable-trufflehog: true
-      enable-trivy: true
-      enable-galaxy-metadata-check: true
-```
-
-### 2. Ansible Galaxy Publish (`ansible-publish.yml`)
-
-Validates metdata formats and description length, and publishes tagged role releases to Ansible Galaxy.
-
-**Usage Example:**
-Add the following to `.github/workflows/publish.yml` in your Ansible role repository:
-
-```yaml
-name: Publish
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-permissions:
-  contents: read
-
-jobs:
-  publish:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v1.2.0
-    with:
-      python-version: "3.12"
-    secrets:
-      galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}
-```
-
-### 3. Granular Reusable Workflows
-
-If you need to run specific suites independently, you can invoke the low-level workflows directly:
-- **[`ansible-lint.yml`](.github/workflows/ansible-lint.yml)**: Static YAML and Ansible linting.
-- **[`ansible-security.yml`](.github/workflows/ansible-security.yml)**: TruffleHog secrets detection and Trivy IaC scans.
-- **[`ansible-molecule.yml`](.github/workflows/ansible-molecule.yml)**: Syntax checks and Molecule testing matrix.
+- Fork the repository and create your branch from `main`
+- Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages:
+  - `feat:` — new features (minor version bump)
+  - `fix:` — bug fixes (patch version bump)
+  - `docs:` — documentation changes
+  - `refactor:` — code refactoring
+  - `test:` — test additions
+  - `ci:` — CI/CD changes
+  - `chore:` — maintenance tasks
+- Use branch naming convention: `feature/`, `bugfix/`, `hotfix/`, `docs/`, `refactor/`, `test/`, `chore/`, `ci/`
+- Ensure your code passes all CI checks (YAML lint, Actions lint)
+- Submit a pull request describing your changes (a template is available under `.github/PULL_REQUEST_TEMPLATE/pull_request_template.md` to help structure your PR description)
+- For major changes, please open an issue first to discuss what you would like to change (issue templates for bug reports, feature requests, and tasks are available under `.github/ISSUE_TEMPLATE/`)
 
 ## 📝 License
 
