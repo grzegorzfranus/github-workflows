@@ -6,7 +6,7 @@
 
 Centralized, reusable, and secure GitHub Actions workflows and configuration templates designed to establish enterprise-grade CI/CD and repository hygiene standards.
 
-This repository serves as a model blueprint ("wzór") for corporate workflows. It incorporates strict security hardening, automated release cycles, and automated local lints.
+This repository serves as a model blueprint ("wzór") for corporate workflows. It incorporates strict security hardening, automated release cycles, and automated local lints. The repository is designed to host multiple workflow categories — currently providing **Ansible** CI/CD pipelines, with additional technology stacks planned for the future.
 
 ## ✨ Features
 
@@ -18,7 +18,9 @@ This repository serves as a model blueprint ("wzór") for corporate workflows. I
 
 ## 🎯 Architecture
 
-The CI orchestrator coordinates all quality checks in a strict dependency chain:
+### Ansible CI Pipeline
+
+The Ansible CI orchestrator coordinates all quality checks in a strict dependency chain:
 
 ```mermaid
 graph TD
@@ -107,9 +109,13 @@ Similarly, all Pull Requests must be structured according to the template locate
 
 ## 📦 Reusable Workflows
 
-This repository provides modular, reusable workflows designed to standardize quality checks across your Ansible role repositories.
+This repository provides modular, reusable workflows organized by technology stack. Additional workflow categories will be added as the repository evolves.
 
-### 1. Ansible CI Orchestrator (`ansible-ci.yml`)
+### Ansible Workflows
+
+Workflows designed to standardize quality checks across Ansible role repositories.
+
+#### 1. Ansible CI Orchestrator (`ansible-ci.yml`)
 
 The primary CI pipeline. It coordinates the execution of linting, security, and functional integration tests in a strict dependency chain. Contains a final Merge Check Gate that aggregates all results into a single required status check.
 
@@ -160,7 +166,7 @@ jobs:
 
 ---
 
-### 2. Ansible Galaxy Publish (`ansible-publish.yml`)
+#### 2. Ansible Galaxy Publish (`ansible-publish.yml`)
 
 Validates metadata formats and description length, and publishes tagged role releases to Ansible Galaxy. Includes retry logic with exponential backoff (up to 3 attempts).
 
@@ -203,7 +209,7 @@ jobs:
 
 ---
 
-### 3. Ansible Lint (`ansible-lint.yml`)
+#### 3. Ansible Lint (`ansible-lint.yml`)
 
 Static YAML and Ansible linting with optional Galaxy metadata validation. Contains yamllint, ansible-lint, and Galaxy metadata check jobs with a final Lint Gate.
 
@@ -230,7 +236,7 @@ jobs:
 
 ---
 
-### 4. Ansible Security (`ansible-security.yml`)
+#### 4. Ansible Security (`ansible-security.yml`)
 
 TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be independently enabled or disabled. Contains a Security Gate job.
 
@@ -255,7 +261,7 @@ jobs:
 
 ---
 
-### 5. Ansible Molecule Testing (`ansible-molecule.yml`)
+#### 5. Ansible Molecule Testing (`ansible-molecule.yml`)
 
 Syntax checks and Molecule integration test matrix. Creates a test matrix from `molecule-scenarios × molecule-distros`. Contains a Molecule Gate job.
 
