@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.2...v1.2.3) (2026-07-03)
+
+
+### Documentation
+
+* add workflow input tables, architecture diagram, and missing sections ([#19](https://github.com/grzegorzfranus/github-workflows/issues/19)) ([af84e2c](https://github.com/grzegorzfranus/github-workflows/commit/af84e2c6e72c840edd14dc5097075eeb67b93a35))
+
 ## [1.2.2](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.1...v1.2.2) (2026-06-26)
 
 
