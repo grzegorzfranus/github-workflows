@@ -14,6 +14,7 @@
         {"type": "refactor", "section": "Code Refactoring"},
         {"type": "docs", "section": "Documentation"},
         {"type": "ci", "section": "CI/CD"},
+        {"type": "build", "section": "Dependencies"},
         {"type": "chore", "section": "Miscellaneous"},
         {"type": "test", "section": "Tests"}
       ]
