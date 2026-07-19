@@ -1,5 +1,6 @@
 ---
 name: "CI"
+run-name: "CI: ${{ github.event.pull_request.title || github.ref_name }} by @${{ github.actor }}"
 
 on:
   pull_request:
@@ -20,12 +21,13 @@ jobs:
   # Runs first to fail fast and save runner execution minutes.
   # ================================================================
   branch-name-lint:
-    name: "Validate Branch Naming"
+    name: "🔍 Validate Branch Naming"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: "Validate branch name"
+      - name: "🔍 Validate branch name"
         env:
           BRANCH_NAME: ${{ github.head_ref }}
           EVENT_NAME: ${{ github.event_name }}
@@ -85,12 +87,13 @@ jobs:
   # Runs first to fail fast and save runner execution minutes.
   # ================================================================
   pr-title-lint:
-    name: "Validate PR Title Format"
+    name: "🔍 Validate PR Title Format"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: "Validate PR title"
+      - name: "🔍 Validate PR title"
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           EVENT_NAME: ${{ github.event_name }}
@@ -147,16 +150,19 @@ jobs:
   # Depends on branch-name-lint and pr-title-lint.
   # ================================================================
   yaml-lint:
-    name: "Validate YAML Syntax"
+    name: "🔍 Validate YAML Syntax"
     needs: [branch-name-lint, pr-title-lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Lint workflow files"
+      - name: "🔍 Lint workflow files"
         run: pipx run yamllint .github/workflows/*.yml
 
   # ================================================================
@@ -166,17 +172,42 @@ jobs:
   # Depends on branch-name-lint and pr-title-lint.
   # ================================================================
   actions-lint:
-    name: "Validate GitHub Actions"
+    name: "🔍 Validate GitHub Actions"
     needs: [branch-name-lint, pr-title-lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Run actionlint"
+      - name: "🔍 Run actionlint"
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+
+  # ================================================================
+  # 3b. SECURITY SCAN (ZIZMOR)
+  # ----------------------------------------------------------------
+  # Scans workflows for security violations.
+  # Depends on branch-name-lint and pr-title-lint.
+  # ================================================================
+  zizmor-scan:
+    name: "🔒 Security Scan (zizmor)"
+    needs: [branch-name-lint, pr-title-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: "🔍 Checkout repository"
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: "🔒 Run zizmor"
+        run: pipx run zizmor .github/workflows
 
   # ================================================================
   # 4. MERGE CHECK — Single mandatory gate for PR merges
@@ -187,18 +218,20 @@ jobs:
   # ================================================================
   merge-check:
     name: "Merge Check Gate"
-    needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint]
+    needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint, zizmor-scan]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
-      - name: "Evaluate results"
+      - name: "⚙️ Evaluate results"
         run: |
           echo "YAML Lint: ${{ needs.yaml-lint.result }}"
           echo "Actions Lint: ${{ needs.actions-lint.result }}"
           echo "Branch Name Lint: ${{ needs.branch-name-lint.result }}"
           echo "PR Title Lint: ${{ needs.pr-title-lint.result }}"
+          echo "Zizmor Scan: ${{ needs.zizmor-scan.result }}"
 
           has_failures=0
 
@@ -219,6 +252,11 @@ jobs:
 
           if [[ "${{ needs.actions-lint.result }}" == "failure" || "${{ needs.actions-lint.result }}" == "cancelled" ]]; then
             echo "::error::Actions Lint failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "${{ needs.zizmor-scan.result }}" == "failure" || "${{ needs.zizmor-scan.result }}" == "cancelled" ]]; then
+            echo "::error::Zizmor Scan failed or was cancelled"
             has_failures=1
           fi
 

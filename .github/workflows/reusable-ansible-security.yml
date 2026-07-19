@@ -25,38 +25,41 @@ jobs:
   # 1. SECRET DETECTION (TruffleHog)
   # ================================================================
   secret-scan:
-    name: "Scan for Secrets"
+    name: "🔒 Scan for Secrets"
     if: ${{ inputs.enable-trufflehog }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 10
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: "Run TruffleHog scanner"
+      - name: "🔒 Run TruffleHog scanner"
         uses: trufflesecurity/trufflehog@00155c9dc586f34d189adc83d3ac2698c2ec551f # v3.88.28
 
   # ================================================================
   # 2. SECURITY IaC SCAN (Trivy)
   # ================================================================
   iac-scan:
-    name: "Scan IaC Misconfigurations"
+    name: "🔒 Scan IaC Misconfigurations"
     if: ${{ inputs.enable-trivy }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 10
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Create dummy .trivyignore if missing"
+      - name: "⚙️ Create dummy .trivyignore if missing"
         run: |
           if [ ! -f .trivyignore ]; then
             echo "# Empty trivyignore file" > .trivyignore
           fi
 
-      - name: "Run Trivy IaC scan"
+      - name: "🔒 Run Trivy IaC scan"
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "fs"
@@ -73,13 +76,13 @@ jobs:
   # 3. SECURITY GATE
   # ================================================================
   security-gate:
-    name: "Security Gate"
+    name: "✅ Security Gate"
     needs: [secret-scan, iac-scan]
     if: always()
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 5
     steps:
-      - name: "Evaluate results"
+      - name: "⚙️ Evaluate results"
         run: |
           echo "Secret Scan (TruffleHog): ${{ needs.secret-scan.result }}"
           echo "IaC Scan (Trivy):         ${{ needs.iac-scan.result }}"

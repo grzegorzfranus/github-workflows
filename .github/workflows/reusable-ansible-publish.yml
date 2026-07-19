@@ -25,13 +25,16 @@ jobs:
   # 1. PRE-PUBLISH VALIDATION
   # ================================================================
   pre-publish-check:
-    name: "Pre-publish Validation"
+    name: "🔍 Pre-publish Validation"
     runs-on: ${{ inputs.runner }}
+    timeout-minutes: 10
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Verify meta/main.yml exists"
+      - name: "⚙️ Verify meta/main.yml exists"
         run: |
           if [ ! -f meta/main.yml ]; then
             echo "::error::meta/main.yml is missing! This is required to publish an Ansible role."
@@ -39,7 +42,7 @@ jobs:
           fi
           echo "meta/main.yml found — role is publishable"
 
-      - name: "Validate Galaxy description length"
+      - name: "🔍 Validate Galaxy description length"
         run: |
           LIMIT=255
 
@@ -71,19 +74,22 @@ jobs:
   # 2. PUBLISH TO GALAXY
   # ================================================================
   publish-galaxy:
-    name: "Publish to Galaxy"
+    name: "📦 Publish to Galaxy"
     needs: [pre-publish-check]
     runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Set up Python ${{ inputs.python-version }}"
+      - name: "⚙️ Set up Python ${{ inputs.python-version }}"
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: "Cache pip"
+      - name: "⚙️ Cache pip"
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pip
@@ -91,10 +97,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-${{ inputs.python-version }}-
 
-      - name: "Install ansible-core"
+      - name: "⚙️ Install ansible-core"
         run: pip install ansible-core
 
-      - name: "Upload to Ansible Galaxy"
+      - name: "📦 Upload to Ansible Galaxy"
+        env:
+          GALAXY_API_KEY: ${{ secrets.galaxy-api-key }}
         run: |
           owner=$(echo "${{ github.repository }}" | cut -d/ -f1)
           repo=$(echo "${{ github.repository }}" | cut -d/ -f2)
@@ -105,7 +113,7 @@ jobs:
 
           while [ $attempt -le $max_attempts ]; do
             echo "Attempt $attempt of $max_attempts: Importing role $owner.$repo to Ansible Galaxy..."
-            if ansible-galaxy role import --api-key "${{ secrets.galaxy-api-key }}" "$owner" "$repo"; then
+            if ansible-galaxy role import --api-key "$GALAXY_API_KEY" "$owner" "$repo"; then
               success=true
               break
             else
