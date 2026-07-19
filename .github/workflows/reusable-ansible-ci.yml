@@ -53,8 +53,8 @@ jobs:
   # 1. RUN LINT WORKFLOW
   # ================================================================
   ansible-lint:
-    name: "Lint"
-    uses: ./.github/workflows/ansible-lint.yml
+    name: "🔍 Lint"
+    uses: ./.github/workflows/reusable-ansible-lint.yml
     with:
       ansible-lint-profile: ${{ inputs.ansible-lint-profile }}
       python-version: ${{ inputs.python-version }}
@@ -66,8 +66,8 @@ jobs:
   # 2. RUN SECURITY WORKFLOW
   # ================================================================
   ansible-security:
-    name: "Security"
-    uses: ./.github/workflows/ansible-security.yml
+    name: "🔒 Security"
+    uses: ./.github/workflows/reusable-ansible-security.yml
     with:
       enable-trufflehog: ${{ inputs.enable-trufflehog }}
       enable-trivy: ${{ inputs.enable-trivy }}
@@ -79,9 +79,9 @@ jobs:
   # Runs after lint and security checks pass to conserve resources.
   # ================================================================
   ansible-molecule:
-    name: "Test"
+    name: "🧪 Test"
     needs: [ansible-lint, ansible-security]
-    uses: ./.github/workflows/ansible-molecule.yml
+    uses: ./.github/workflows/reusable-ansible-molecule.yml
     with:
       molecule-scenarios: ${{ inputs.molecule-scenarios }}
       molecule-distros: ${{ inputs.molecule-distros }}
@@ -102,7 +102,7 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 5
     steps:
-      - name: "Evaluate results"
+      - name: "⚙️ Evaluate results"
         run: |
           echo "Ansible Lint:     ${{ needs.ansible-lint.result }}"
           echo "Ansible Security: ${{ needs.ansible-security.result }}"
@@ -131,7 +131,7 @@ jobs:
 
           echo "All checks passed successfully"
 
-      - name: "Generate summary"
+      - name: "📝 Generate summary"
         if: always()
         run: |
           {
