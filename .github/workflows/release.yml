@@ -1,5 +1,6 @@
 ---
 name: "Release"
+run-name: "Release: ${{ github.ref_name }} by @${{ github.actor }}"
 
 on:
   push:
@@ -17,15 +18,16 @@ jobs:
   # creates a Git tag and GitHub Release automatically.
   # ================================================================
   release-please:
-    name: "Run Release Please"
+    name: "📝 Run Release Please"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
       pull-requests: write
     outputs:
       prs_created: ${{ steps.release.outputs.prs_created }}
     steps:
-      - name: "Run Release Please"
+      - name: "📝 Run Release Please"
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
@@ -41,15 +43,16 @@ jobs:
   # events in other workflows.
   # ================================================================
   validate-release-pr:
-    name: "Validate Release PR"
+    name: "🔍 Validate Release PR"
     needs: [release-please]
     if: needs.release-please.outputs.prs_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       statuses: write
     steps:
-      - name: "Retrieve Release PR Details"
+      - name: "🔍 Retrieve Release PR Details"
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
@@ -67,18 +70,19 @@ jobs:
           echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "sha=$PR_SHA" >> "$GITHUB_OUTPUT"
 
-      - name: "Checkout Release PR Branch"
+      - name: "🔍 Checkout Release PR Branch"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: release-please--branches--main
+          persist-credentials: false
 
-      - name: "Validate YAML Syntax"
+      - name: "🔍 Validate YAML Syntax"
         run: pipx run yamllint .github/workflows/*.yml
 
-      - name: "Validate GitHub Actions"
+      - name: "🔍 Validate GitHub Actions"
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
 
-      - name: "Publish Merge Check Status"
+      - name: "✅ Publish Merge Check Status"
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ steps.pr.outputs.sha }}

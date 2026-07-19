@@ -33,19 +33,21 @@ jobs:
   # 1. YAML SYNTAX VALIDATION
   # ================================================================
   yaml-lint:
-    name: "Validate YAML Syntax"
+    name: "🔍 Validate YAML Syntax"
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 10
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Set up Python ${{ inputs.python-version }}"
+      - name: "⚙️ Set up Python ${{ inputs.python-version }}"
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: "Cache pip"
+      - name: "⚙️ Cache pip"
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pip
@@ -53,34 +55,38 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-${{ inputs.python-version }}-
 
-      - name: "Install yamllint"
+      - name: "⚙️ Install yamllint"
+        env:
+          REQUIREMENTS_CI_FILE: ${{ inputs.requirements-ci-file }}
         run: |
-          if [ -n "${{ inputs.requirements-ci-file }}" ] && [ -f "${{ inputs.requirements-ci-file }}" ]; then
-            pip install -r "${{ inputs.requirements-ci-file }}"
+          if [ -n "$REQUIREMENTS_CI_FILE" ] && [ -f "$REQUIREMENTS_CI_FILE" ]; then
+            pip install -r "$REQUIREMENTS_CI_FILE"
           else
             pip install yamllint
           fi
 
-      - name: "Lint YAML files"
+      - name: "🔍 Lint YAML files"
         run: yamllint .
 
   # ================================================================
   # 2. ANSIBLE LINT
   # ================================================================
   ansible-lint:
-    name: "Validate Ansible Coding Standards"
+    name: "🔍 Validate Ansible Coding Standards"
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 10
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Set up Python ${{ inputs.python-version }}"
+      - name: "⚙️ Set up Python ${{ inputs.python-version }}"
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: "Cache pip"
+      - name: "⚙️ Cache pip"
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pip
@@ -88,30 +94,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-${{ inputs.python-version }}-
 
-      - name: "Install ansible-lint"
+      - name: "⚙️ Install ansible-lint"
+        env:
+          REQUIREMENTS_CI_FILE: ${{ inputs.requirements-ci-file }}
         run: |
-          if [ -n "${{ inputs.requirements-ci-file }}" ] && [ -f "${{ inputs.requirements-ci-file }}" ]; then
-            pip install -r "${{ inputs.requirements-ci-file }}"
+          if [ -n "$REQUIREMENTS_CI_FILE" ] && [ -f "$REQUIREMENTS_CI_FILE" ]; then
+            pip install -r "$REQUIREMENTS_CI_FILE"
           else
             pip install ansible-lint
           fi
 
-      - name: "Run ansible-lint"
-        run: ansible-lint --profile ${{ inputs.ansible-lint-profile }} .
+      - name: "🔍 Run ansible-lint"
+        env:
+          ANSIBLE_LINT_PROFILE: ${{ inputs.ansible-lint-profile }}
+        run: ansible-lint --profile "$ANSIBLE_LINT_PROFILE" .
 
   # ================================================================
   # 3. GALAXY METADATA VALIDATION
   # ================================================================
   galaxy-metadata-check:
-    name: "Validate Galaxy Metadata"
+    name: "🔍 Validate Galaxy Metadata"
     if: ${{ inputs.enable-galaxy-metadata-check }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 5
     steps:
-      - name: "Checkout repository"
+      - name: "🔍 Checkout repository"
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: "Validate meta/main.yml"
+      - name: "🔍 Validate meta/main.yml"
         run: |
           if [ ! -f meta/main.yml ]; then
             echo "::warning::meta/main.yml not found — skipping Galaxy validation"
@@ -145,13 +157,13 @@ jobs:
   # 4. LINT GATE
   # ================================================================
   lint-gate:
-    name: "Lint Gate"
+    name: "✅ Lint Gate"
     needs: [yaml-lint, ansible-lint, galaxy-metadata-check]
     if: always()
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 5
     steps:
-      - name: "Evaluate results"
+      - name: "⚙️ Evaluate results"
         run: |
           echo "YAML Lint:        ${{ needs.yaml-lint.result }}"
           echo "Ansible Lint:     ${{ needs.ansible-lint.result }}"
