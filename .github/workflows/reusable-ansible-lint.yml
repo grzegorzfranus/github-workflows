@@ -17,7 +17,7 @@ on:
         type: string
         default: ""
       enable-galaxy-metadata-check:
-        description: "Enable Galaxy meta/main.yml validation"
+        description: "[DEPRECATED] Moved to reusable-ansible-meta-validate.yml — this input is ignored"
         type: boolean
         default: true
       runner:
@@ -110,55 +110,11 @@ jobs:
         run: ansible-lint --profile "$ANSIBLE_LINT_PROFILE" .
 
   # ================================================================
-  # 3. GALAXY METADATA VALIDATION
-  # ================================================================
-  galaxy-metadata-check:
-    name: "🔍 Validate Galaxy Metadata"
-    if: ${{ inputs.enable-galaxy-metadata-check }}
-    runs-on: ${{ inputs.runner }}
-    timeout-minutes: 5
-    steps:
-      - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: "🔍 Validate meta/main.yml"
-        run: |
-          if [ ! -f meta/main.yml ]; then
-            echo "::warning::meta/main.yml not found — skipping Galaxy validation"
-            exit 0
-          fi
-
-          echo "Validating Galaxy metadata..."
-
-          python3 -c "
-          import yaml, sys
-          with open('meta/main.yml') as f:
-              data = yaml.safe_load(f)
-          gi = data.get('galaxy_info', {})
-          errors = []
-          for field in ['author', 'description', 'license', 'min_ansible_version']:
-              if not gi.get(field):
-                  errors.append(f'Missing required field: galaxy_info.{field}')
-          desc = gi.get('description', '')
-          if desc and len(desc) > 255:
-              errors.append(f'Description too long: {len(desc)}/255 chars')
-          if not gi.get('platforms'):
-              errors.append('No platforms defined in galaxy_info')
-          if errors:
-              for e in errors:
-                  print(f'::error::{e}')
-              sys.exit(1)
-          print('Galaxy metadata validation passed')
-          "
-
-  # ================================================================
-  # 4. LINT GATE
+  # 3. LINT GATE
   # ================================================================
   lint-gate:
     name: "✅ Lint Gate"
-    needs: [yaml-lint, ansible-lint, galaxy-metadata-check]
+    needs: [yaml-lint, ansible-lint]
     if: always()
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 5
@@ -167,7 +123,6 @@ jobs:
         run: |
           echo "YAML Lint:        ${{ needs.yaml-lint.result }}"
           echo "Ansible Lint:     ${{ needs.ansible-lint.result }}"
-          echo "Galaxy Metadata:  ${{ needs.galaxy-metadata-check.result }}"
 
           has_failures=0
 
@@ -178,11 +133,6 @@ jobs:
 
           if [[ "${{ needs.ansible-lint.result }}" == "failure" || "${{ needs.ansible-lint.result }}" == "cancelled" ]]; then
             echo "::error::Ansible Lint failed or was cancelled"
-            has_failures=1
-          fi
-
-          if [[ "${{ needs.galaxy-metadata-check.result }}" == "failure" || "${{ needs.galaxy-metadata-check.result }}" == "cancelled" ]]; then
-            echo "::error::Galaxy Metadata check failed or was cancelled"
             has_failures=1
           fi
 

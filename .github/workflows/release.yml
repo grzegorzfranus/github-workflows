@@ -51,6 +51,7 @@ jobs:
     permissions:
       contents: read
       statuses: write
+      pull-requests: read
     steps:
       - name: "🔍 Retrieve Release PR Details"
         id: pr
