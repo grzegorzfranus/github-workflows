@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.5...v2.0.0) (2026-07-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ci:** rename reusable workflows and harden CI [#27] ([#28](https://github.com/grzegorzfranus/github-workflows/issues/28))
+
+### Features
+
+* **ci:** rename reusable workflows and harden CI [[#27](https://github.com/grzegorzfranus/github-workflows/issues/27)] ([#28](https://github.com/grzegorzfranus/github-workflows/issues/28)) ([f680543](https://github.com/grzegorzfranus/github-workflows/commit/f68054340ea8198c692a4d3a808ab15a685dfd1b))
+
 ## [1.2.5](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.4...v1.2.5) (2026-07-19)
 
 
