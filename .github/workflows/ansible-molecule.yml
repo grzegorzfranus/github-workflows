@@ -65,6 +65,14 @@ jobs:
             pip install ansible-core
           fi
 
+      - name: "Install Ansible collections"
+        run: |
+          if [ -f "requirements.yml" ]; then
+            ansible-galaxy collection install -r requirements.yml
+          else
+            echo "No requirements.yml found — skipping collection install"
+          fi
+
       - name: "Run syntax check on all playbooks"
         run: |
           exit_code=0
