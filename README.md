@@ -382,7 +382,7 @@ jobs:
 
 ## 🔄 Migration to v3
 
-Version `v3.0.0` introduces a breaking change by extracting the Ansible Galaxy metadata validation logic into a dedicated reusable workflow `reusable-ansible-meta-validate.yml`. 
+Version `v3.0.0` introduces a breaking change by extracting the Ansible Galaxy metadata validation logic into a dedicated reusable workflow `reusable-ansible-meta-validate.yml`.
 
 ### Key Changes:
 - **Publish Workflow**: The `reusable-ansible-publish.yml` workflow no longer executes `pre-publish-check` internally. Consuming repositories must run the metadata validation check before running the publish job.
