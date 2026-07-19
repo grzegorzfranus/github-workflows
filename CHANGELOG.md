@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/grzegorzfranus/github-workflows/compare/v2.0.0...v3.0.0) (2026-07-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflows:** [#30] extract galaxy metadata validation ([#31](https://github.com/grzegorzfranus/github-workflows/issues/31))
+
+### Features
+
+* **workflows:** [[#30](https://github.com/grzegorzfranus/github-workflows/issues/30)] extract galaxy metadata validation ([#31](https://github.com/grzegorzfranus/github-workflows/issues/31)) ([e14fb85](https://github.com/grzegorzfranus/github-workflows/commit/e14fb85bf573bfdb0e0cc3a4313bb30b95d47c8b))
+
 ## [2.0.0](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.5...v2.0.0) (2026-07-19)
 
 
