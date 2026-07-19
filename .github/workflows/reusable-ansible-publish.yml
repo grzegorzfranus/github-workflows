@@ -22,60 +22,13 @@ permissions:
 
 jobs:
   # ================================================================
-  # 1. PRE-PUBLISH VALIDATION
-  # ================================================================
-  pre-publish-check:
-    name: "🔍 Pre-publish Validation"
-    runs-on: ${{ inputs.runner }}
-    timeout-minutes: 10
-    steps:
-      - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: "⚙️ Verify meta/main.yml exists"
-        run: |
-          if [ ! -f meta/main.yml ]; then
-            echo "::error::meta/main.yml is missing! This is required to publish an Ansible role."
-            exit 1
-          fi
-          echo "meta/main.yml found — role is publishable"
-
-      - name: "🔍 Validate Galaxy description length"
-        run: |
-          LIMIT=255
-
-          # Extract description using Python/PyYAML for reliable YAML parsing
-          DESC=$(python3 -c "
-          import yaml, sys
-          with open('meta/main.yml') as f:
-              data = yaml.safe_load(f)
-          desc = data.get('galaxy_info', {}).get('description', '')
-          print(desc.strip() if desc else '')
-          " 2>/dev/null || echo "")
-
-          if [ -z "$DESC" ]; then
-            echo "::warning::No description found in meta/main.yml galaxy_info"
-            exit 0
-          fi
-
-          LEN=${#DESC}
-          echo "Description ($LEN/$LIMIT chars): $DESC"
-
-          if [ "$LEN" -gt "$LIMIT" ]; then
-            echo "::error::Galaxy description exceeds $LIMIT characters ($LEN chars). Shorten it to avoid Galaxy import rejection."
-            exit 1
-          fi
-
-          echo "Description length OK"
-
-  # ================================================================
-  # 2. PUBLISH TO GALAXY
+  # 1. PUBLISH TO GALAXY
+  # ----------------------------------------------------------------
+  # Metadata validation is performed by the caller workflow using
+  # reusable-ansible-meta-validate.yml before invoking this workflow.
   # ================================================================
   publish-galaxy:
     name: "📦 Publish to Galaxy"
-    needs: [pre-publish-check]
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 15
     steps:

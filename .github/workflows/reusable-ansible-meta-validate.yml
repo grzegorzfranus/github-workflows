@@ -1,0 +1,154 @@
+---
+name: "Ansible Galaxy Metadata Validation"
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version to use"
+        type: string
+        default: "3.12"
+      runner:
+        description: "Runner label to execute jobs on"
+        type: string
+        default: "ubuntu-latest"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-metadata:
+    name: "🔍 Validate Galaxy Metadata"
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: "🔍 Checkout repository"
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: "⚙️ Set up Python ${{ inputs.python-version }}"
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: "⚙️ Install PyYAML"
+        run: pip install PyYAML
+
+      - name: "🔍 Verify meta/main.yml exists"
+        run: |
+          if [ ! -f meta/main.yml ]; then
+            echo "::error::meta/main.yml is missing! This file is required for Ansible Galaxy roles."
+            exit 1
+          fi
+          echo "✅ meta/main.yml found"
+
+      - name: "🔍 Validate Galaxy metadata structure and requirements"
+        run: |
+          python3 << 'EOF'
+          import yaml
+          import sys
+
+          # Load meta/main.yml
+          with open('meta/main.yml') as f:
+              data = yaml.safe_load(f)
+
+          galaxy_info = data.get('galaxy_info', {})
+          errors = []
+          warnings = []
+
+          # Required fields validation
+          required_fields = ['author', 'description', 'license', 'min_ansible_version']
+          for field in required_fields:
+              value = galaxy_info.get(field)
+              if not value:
+                  errors.append(f"Missing required field: galaxy_info.{field}")
+              elif isinstance(value, str) and not value.strip():
+                  errors.append(f"Empty value for required field: galaxy_info.{field}")
+
+          # Description length validation (Galaxy limit: 255 chars)
+          description = galaxy_info.get('description', '')
+          if description:
+              desc_text = description.strip()
+              if len(desc_text) > 255:
+                  errors.append(f"Description exceeds Galaxy limit: {len(desc_text)}/255 characters")
+              elif len(desc_text) < 20:
+                  warnings.append(f"Description is very short: {len(desc_text)} characters (recommended: 50-200)")
+
+          # Platforms validation
+          platforms = galaxy_info.get('platforms')
+          if not platforms:
+              errors.append("No platforms defined in galaxy_info.platforms")
+          elif not isinstance(platforms, list) or len(platforms) == 0:
+              errors.append("galaxy_info.platforms must be a non-empty list")
+          else:
+              for idx, platform in enumerate(platforms):
+                  if not isinstance(platform, dict):
+                      errors.append(f"Platform entry {idx} must be a dictionary")
+                      continue
+                  if 'name' not in platform:
+                      errors.append(f"Platform entry {idx} missing 'name' field")
+                  if 'versions' not in platform or not platform['versions']:
+                      warnings.append(f"Platform '{platform.get('name', f'#{idx}')}' has no versions defined")
+
+          # Galaxy tags validation
+          tags = galaxy_info.get('galaxy_tags', [])
+          if tags:
+              if not isinstance(tags, list):
+                  errors.append("galaxy_info.galaxy_tags must be a list")
+              elif len(tags) > 20:
+                  warnings.append(f"Galaxy recommends maximum 20 tags, found {len(tags)}")
+
+              for tag in tags:
+                  if not isinstance(tag, str):
+                      errors.append(f"Galaxy tag must be string, found: {type(tag).__name__}")
+                  elif len(tag) > 32:
+                      errors.append(f"Galaxy tag exceeds 32 character limit: '{tag}'")
+
+          # Company/Organization (optional but recommended)
+          if not galaxy_info.get('company'):
+              warnings.append("Consider adding 'company' field for better role attribution")
+
+          # Role name validation
+          role_name = galaxy_info.get('role_name')
+          if role_name:
+              if not isinstance(role_name, str) or not role_name.strip():
+                  errors.append("galaxy_info.role_name must be a non-empty string")
+              elif ' ' in role_name:
+                  errors.append(f"galaxy_info.role_name cannot contain spaces: '{role_name}'")
+
+          # Dependencies validation
+          dependencies = data.get('dependencies', [])
+          if dependencies is not None and not isinstance(dependencies, list):
+              errors.append("dependencies must be a list (or empty list)")
+
+          # Print results
+          if warnings:
+              print("\n⚠️  Warnings:")
+              for warning in warnings:
+                  print(f"  - {warning}")
+
+          if errors:
+              print("\n❌ Validation Errors:")
+              for error in errors:
+                  print(f"::error::{error}")
+              sys.exit(1)
+
+          print("\n✅ Galaxy metadata validation passed")
+          print(f"   Role: {galaxy_info.get('role_name', 'N/A')}")
+          print(f"   Author: {galaxy_info.get('author', 'N/A')}")
+          print(f"   Platforms: {len(platforms) if platforms else 0}")
+          print(f"   Min Ansible: {galaxy_info.get('min_ansible_version', 'N/A')}")
+          EOF
+
+      - name: "📝 Validation summary"
+        if: success()
+        run: |
+          {
+            echo "## ✅ Galaxy Metadata Validation"
+            echo ""
+            echo "All required fields are present and valid."
+            echo ""
+            echo "- **File**: \`meta/main.yml\`"
+            echo "- **Status**: Ready for Galaxy publish"
+          } >> "$GITHUB_STEP_SUMMARY"
