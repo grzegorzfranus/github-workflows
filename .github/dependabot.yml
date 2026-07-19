@@ -5,6 +5,24 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
     commit-message:
+      # Prefix remains 'fix' intentionally: updating actions modifies the workflows
+      # published by this repo, which triggers a patch release for downstream consumers.
       prefix: "fix"
       include: "scope"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    cooldown:
+      default-days: 14
