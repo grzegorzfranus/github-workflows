@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.4...v1.2.5) (2026-07-19)
+
+
+### Bug Fixes
+
+* **ci:** install galaxy collections in syntax-check job ([#25](https://github.com/grzegorzfranus/github-workflows/issues/25)) ([24ddab7](https://github.com/grzegorzfranus/github-workflows/commit/24ddab777ae93afe9862115777debff0064f6fdf))
+
 ## [1.2.4](https://github.com/grzegorzfranus/github-workflows/compare/v1.2.3...v1.2.4) (2026-07-03)
 
 
