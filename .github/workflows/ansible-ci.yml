@@ -54,7 +54,7 @@ jobs:
   # ================================================================
   ansible-lint:
     name: "🔍 Lint"
-    uses: ./.github/workflows/reusable-ansible-lint.yml
+    uses: ./.github/workflows/ansible-lint.yml
     with:
       ansible-lint-profile: ${{ inputs.ansible-lint-profile }}
       python-version: ${{ inputs.python-version }}
@@ -67,7 +67,7 @@ jobs:
   # ================================================================
   ansible-security:
     name: "🔒 Security"
-    uses: ./.github/workflows/reusable-ansible-security.yml
+    uses: ./.github/workflows/ansible-security.yml
     with:
       enable-trufflehog: ${{ inputs.enable-trufflehog }}
       enable-trivy: ${{ inputs.enable-trivy }}
@@ -79,7 +79,7 @@ jobs:
   ansible-meta-validate:
     name: "📋 Metadata"
     if: ${{ inputs.enable-galaxy-metadata-check }}
-    uses: ./.github/workflows/reusable-ansible-meta-validate.yml
+    uses: ./.github/workflows/ansible-meta-validate.yml
     with:
       python-version: ${{ inputs.python-version }}
       runner: ${{ inputs.runner }}
@@ -97,7 +97,7 @@ jobs:
       needs.ansible-lint.result == 'success' &&
       needs.ansible-security.result == 'success' &&
       (needs.ansible-meta-validate.result == 'success' || needs.ansible-meta-validate.result == 'skipped')
-    uses: ./.github/workflows/reusable-ansible-molecule.yml
+    uses: ./.github/workflows/ansible-molecule.yml
     with:
       molecule-scenarios: ${{ inputs.molecule-scenarios }}
       molecule-distros: ${{ inputs.molecule-distros }}
@@ -119,30 +119,35 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"
+        env:
+          ANSIBLE_LINT_RESULT: ${{ needs.ansible-lint.result }}
+          ANSIBLE_SECURITY_RESULT: ${{ needs.ansible-security.result }}
+          ANSIBLE_META_VALIDATE_RESULT: ${{ needs.ansible-meta-validate.result }}
+          ANSIBLE_MOLECULE_RESULT: ${{ needs.ansible-molecule.result }}
         run: |
-          echo "Ansible Lint:     ${{ needs.ansible-lint.result }}"
-          echo "Ansible Security: ${{ needs.ansible-security.result }}"
-          echo "Ansible Metadata: ${{ needs.ansible-meta-validate.result }}"
-          echo "Ansible Molecule: ${{ needs.ansible-molecule.result }}"
+          echo "Ansible Lint:     $ANSIBLE_LINT_RESULT"
+          echo "Ansible Security: $ANSIBLE_SECURITY_RESULT"
+          echo "Ansible Metadata: $ANSIBLE_META_VALIDATE_RESULT"
+          echo "Ansible Molecule: $ANSIBLE_MOLECULE_RESULT"
 
           has_failures=0
 
-          if [[ "${{ needs.ansible-lint.result }}" == "failure" || "${{ needs.ansible-lint.result }}" == "cancelled" ]]; then
+          if [[ "$ANSIBLE_LINT_RESULT" == "failure" || "$ANSIBLE_LINT_RESULT" == "cancelled" ]]; then
             echo "::error::Ansible Lint validation failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.ansible-security.result }}" == "failure" || "${{ needs.ansible-security.result }}" == "cancelled" ]]; then
+          if [[ "$ANSIBLE_SECURITY_RESULT" == "failure" || "$ANSIBLE_SECURITY_RESULT" == "cancelled" ]]; then
             echo "::error::Ansible Security scan failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.ansible-meta-validate.result }}" == "failure" || "${{ needs.ansible-meta-validate.result }}" == "cancelled" ]]; then
+          if [[ "$ANSIBLE_META_VALIDATE_RESULT" == "failure" || "$ANSIBLE_META_VALIDATE_RESULT" == "cancelled" ]]; then
             echo "::error::Ansible Galaxy Metadata validation failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.ansible-molecule.result }}" == "failure" || "${{ needs.ansible-molecule.result }}" == "cancelled" ]]; then
+          if [[ "$ANSIBLE_MOLECULE_RESULT" == "failure" || "$ANSIBLE_MOLECULE_RESULT" == "cancelled" ]]; then
             echo "::error::Ansible Molecule tests failed or was cancelled"
             has_failures=1
           fi

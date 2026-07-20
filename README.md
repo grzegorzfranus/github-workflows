@@ -25,11 +25,11 @@ The Ansible CI orchestrator coordinates all quality checks in a strict dependenc
 
 ```mermaid
 graph TD
-    A["Consumer Repository<br/>.github/workflows/ci.yml"] -->|"uses: ...reusable-ansible-ci.yml@v3"| B["reusable-ansible-ci.yml<br/>(Orchestrator)"]
-    B -->|"Job 1"| C["reusable-ansible-lint.yml<br/>yamllint + ansible-lint"]
-    B -->|"Job 2"| D["reusable-ansible-security.yml<br/>TruffleHog + Trivy"]
-    B -->|"Job 3"| G["reusable-ansible-meta-validate.yml<br/>Galaxy metadata validation"]
-    C --> E["reusable-ansible-molecule.yml<br/>Syntax check + Molecule<br/>matrix (distro × scenario)"]
+    A["Consumer Repository<br/>.github/workflows/ci.yml"] -->|"uses: ...ansible-ci.yml@v3"| B["ansible-ci.yml<br/>(Orchestrator)"]
+    B -->|"Job 1"| C["ansible-lint.yml<br/>yamllint + ansible-lint"]
+    B -->|"Job 2"| D["ansible-security.yml<br/>TruffleHog + Trivy"]
+    B -->|"Job 3"| G["ansible-meta-validate.yml<br/>Galaxy metadata validation"]
+    C --> E["ansible-molecule.yml<br/>Syntax check + Molecule<br/>matrix (distro × scenario)"]
     D --> E
     G --> E
     E --> F["merge-check<br/>(Gate — aggregates all results)"]
@@ -74,7 +74,7 @@ To use the Galaxy publish capabilities, you must configure the following secret 
 
 | Secret Name | Purpose | Target Workflow |
 | ----------- | ------- | --------------- |
-| `GALAXY_API_KEY` | Ansible Galaxy token used to authorize the publishing of tagged releases. | `reusable-ansible-publish.yml` |
+| `GALAXY_API_KEY` | Ansible Galaxy token used to authorize the publishing of tagged releases. | `ansible-publish.yml` |
 
 ---
 
@@ -102,7 +102,7 @@ This repository uses automated dependency management configuration defined under
 
 - **GitHub Actions**: The calling repository must use GitHub Actions with `workflow_call` support.
 - **Permissions**: Caller workflows must declare `permissions: contents: read` (minimum).
-- **Secrets** (publish only): `GALAXY_API_KEY` must be configured as a repository secret for `reusable-ansible-publish.yml`.
+- **Secrets** (publish only): `GALAXY_API_KEY` must be configured as a repository secret for `ansible-publish.yml`.
 - **Supported Python**: `3.12` (default, configurable via `python-version` input).
 
 ---
@@ -178,7 +178,7 @@ This repository provides modular, reusable workflows organized by technology sta
 
 Workflows designed to standardize quality checks across Ansible role repositories.
 
-#### 1. Ansible CI Orchestrator (`reusable-ansible-ci.yml`)
+#### 1. Ansible CI Orchestrator (`ansible-ci.yml`)
 
 The primary CI pipeline. It coordinates the execution of linting, security, metadata validation, and functional integration tests in a strict dependency chain. Contains a final Merge Check Gate that aggregates all results into a single required status check.
 
@@ -192,7 +192,7 @@ The primary CI pipeline. It coordinates the execution of linting, security, meta
 | `python-version` | string | no | `"3.12"` | Python version to use on the runner |
 | `enable-trufflehog` | boolean | no | `true` | Enable TruffleHog secret scanning |
 | `enable-trivy` | boolean | no | `true` | Enable Trivy IaC security scans |
-| `enable-galaxy-metadata-check` | boolean | no | `true` | Enable Galaxy `meta/main.yml` validation (dedicated reusable-ansible-meta-validate.yml) |
+| `enable-galaxy-metadata-check` | boolean | no | `true` | Enable Galaxy `meta/main.yml` validation (dedicated ansible-meta-validate.yml) |
 | `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
 | `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
 | `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
@@ -216,7 +216,7 @@ concurrency:
 
 jobs:
   ansible-ci:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-ci.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.0.0
     with:
       ansible-lint-profile: "production"
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
@@ -229,7 +229,7 @@ jobs:
 
 ---
 
-#### 2. Ansible Galaxy Metadata Validation (`reusable-ansible-meta-validate.yml`)
+#### 2. Ansible Galaxy Metadata Validation (`ansible-meta-validate.yml`)
 
 Dedicated validation of Ansible Galaxy metadata structure and requirements. Validates presence and types of required fields, description length boundaries (255 chars limit, 20 chars minimum warning), platforms dictionary structure, tags conventions, role naming conventions, and dependencies format.
 
@@ -245,16 +245,16 @@ Dedicated validation of Ansible Galaxy metadata structure and requirements. Vali
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-meta-validate.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.0.0
     with:
       python-version: "3.12"
 ```
 
 ---
 
-#### 3. Ansible Galaxy Publish (`reusable-ansible-publish.yml`)
+#### 3. Ansible Galaxy Publish (`ansible-publish.yml`)
 
-Publishes tagged role releases to Ansible Galaxy. Includes retry logic with exponential backoff (up to 3 attempts). Note: Metadata validation is NOT performed by this workflow and must be run beforehand (e.g. via `reusable-ansible-meta-validate.yml`).
+Publishes tagged role releases to Ansible Galaxy. Includes retry logic with exponential backoff (up to 3 attempts). Note: Metadata validation is NOT performed by this workflow and must be run beforehand (e.g. via `ansible-meta-validate.yml`).
 
 **Inputs:**
 
@@ -286,11 +286,11 @@ permissions:
 
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-meta-validate.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.0.0
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-publish.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.0.0
     with:
       python-version: "3.12"
     secrets:
@@ -299,9 +299,9 @@ jobs:
 
 ---
 
-#### 4. Ansible Lint (`reusable-ansible-lint.yml`)
+#### 4. Ansible Lint (`ansible-lint.yml`)
 
-Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note: Galaxy metadata check has been deprecated in this workflow (moved to `reusable-ansible-meta-validate.yml`).
+Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note: Galaxy metadata check has been deprecated in this workflow (moved to `ansible-meta-validate.yml`).
 
 **Inputs:**
 
@@ -318,14 +318,14 @@ Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note
 ```yaml
 jobs:
   lint:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-lint.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v3.0.0
     with:
       ansible-lint-profile: "production"
 ```
 
 ---
 
-#### 5. Ansible Security (`reusable-ansible-security.yml`)
+#### 5. Ansible Security (`ansible-security.yml`)
 
 TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be independently enabled or disabled. Contains a Security Gate job.
 
@@ -342,7 +342,7 @@ TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be i
 ```yaml
 jobs:
   security:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-security.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v3.0.0
     with:
       enable-trufflehog: true
       enable-trivy: true
@@ -350,7 +350,7 @@ jobs:
 
 ---
 
-#### 6. Ansible Molecule Testing (`reusable-ansible-molecule.yml`)
+#### 6. Ansible Molecule Testing (`ansible-molecule.yml`)
 
 Syntax checks and Molecule integration test matrix. Creates a test matrix from `molecule-scenarios × molecule-distros`. Contains a Molecule Gate job.
 
@@ -370,7 +370,7 @@ Syntax checks and Molecule integration test matrix. Creates a test matrix from `
 ```yaml
 jobs:
   molecule:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-molecule.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v3.0.0
     with:
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
       molecule-scenarios: '["default"]'
@@ -380,26 +380,45 @@ jobs:
 
 ---
 
+## 🔄 Migration to v4
+
+Version `v4.0.0` introduces a breaking change by stripping the `reusable-` prefix from all reusable workflow filenames. This simplifies paths and aligns with standard practices.
+
+### Workflow Name Mapping
+
+To upgrade, replace the `uses:` paths in your caller workflows according to the following mapping:
+
+| Old Workflow Path (v2/v3) | New Workflow Path (v4.0.0+) |
+| ------------------------- | --------------------------- |
+| `.github/workflows/reusable-ansible-ci.yml` | `.github/workflows/ansible-ci.yml` |
+| `.github/workflows/reusable-ansible-publish.yml` | `.github/workflows/ansible-publish.yml` |
+| `.github/workflows/reusable-ansible-lint.yml` | `.github/workflows/ansible-lint.yml` |
+| `.github/workflows/reusable-ansible-security.yml` | `.github/workflows/ansible-security.yml` |
+| `.github/workflows/reusable-ansible-molecule.yml` | `.github/workflows/ansible-molecule.yml` |
+| `.github/workflows/reusable-ansible-meta-validate.yml` | `.github/workflows/ansible-meta-validate.yml` |
+
+---
+
 ## 🔄 Migration to v3
 
-Version `v3.0.0` introduces a breaking change by extracting the Ansible Galaxy metadata validation logic into a dedicated reusable workflow `reusable-ansible-meta-validate.yml`.
+Version `v3.0.0` introduces a breaking change by extracting the Ansible Galaxy metadata validation logic into a dedicated reusable workflow `ansible-meta-validate.yml`.
 
 ### Key Changes:
-- **Publish Workflow**: The `reusable-ansible-publish.yml` workflow no longer executes `pre-publish-check` internally. Consuming repositories must run the metadata validation check before running the publish job.
-- **Lint Workflow**: The `reusable-ansible-lint.yml` workflow no longer runs metadata checks. The `enable-galaxy-metadata-check` input is now deprecated and ignored.
-- **Orchestrator**: The `reusable-ansible-ci.yml` coordinates the new validation as a separate job, running in parallel with Lint and Security, gating the Molecule tests.
+- **Publish Workflow**: The `ansible-publish.yml` workflow no longer executes `pre-publish-check` internally. Consuming repositories must run the metadata validation check before running the publish job.
+- **Lint Workflow**: The `ansible-lint.yml` workflow no longer runs metadata checks. The `enable-galaxy-metadata-check` input is now deprecated and ignored.
+- **Orchestrator**: The `ansible-ci.yml` coordinates the new validation as a separate job, running in parallel with Lint and Security, gating the Molecule tests.
 
 ### Upgrade Procedure for Consumers:
-If using the orchestrator `reusable-ansible-ci.yml`, no configuration changes are required unless you explicitly disabled metadata checks. If using publish/lint workflows individually, ensure you call the metadata validation workflow:
+If using the orchestrator `ansible-ci.yml`, no configuration changes are required unless you explicitly disabled metadata checks. If using publish/lint workflows individually, ensure you call the metadata validation workflow:
 
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-meta-validate.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.0.0
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-publish.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.0.0
     with:
       python-version: "3.12"
     secrets:
@@ -497,7 +516,7 @@ After integrating the reusable workflows, verify they work correctly:
 
 ## 🛡️ Security Features
 
-- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0`).
+- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd`).
 - ✅ **Minimal Job Permissions**: Jobs elevate access only when required (e.g. `release-please` has `contents: write`, validation has `contents: read`).
 - ✅ **Isolated Linters**: Internal CI uses `pipx run` for zero-install linting; reusable workflows use isolated `pip install` within runner environments.
 - ✅ **Automated Branch Name Gate**: Rejects PR branches failing naming conventions.
@@ -510,7 +529,7 @@ After integrating the reusable workflows, verify they work correctly:
 
 | Action | SHA | Version |
 | --- | --- | --- |
-| `actions/checkout` | `9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0` | v7.0.0 |
+| `actions/checkout` | `93cb6efe18208431cddfb8368fd83d5badbf9bfd` | v5.0.1 |
 | `actions/setup-python` | `ece7cb06caefa5fff74198d8649806c4678c61a1` | v6.3.0 |
 | `actions/cache` | `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` | v6.1.0 |
 | `trufflesecurity/trufflehog` | `00155c9dc586f34d189adc83d3ac2698c2ec551f` | v3.88.28 |
@@ -531,12 +550,12 @@ github-workflows/
 │   ├── PULL_REQUEST_TEMPLATE/
 │   │   └── pull_request_template.md   # PR checklist template
 │   ├── workflows/
-│   │   ├── reusable-ansible-ci.yml    # Ansible CI orchestrator
-│   │   ├── reusable-ansible-lint.yml  # Reusable Ansible lint validations
-│   │   ├── reusable-ansible-meta-validate.yml # Reusable Galaxy metadata validation
-│   │   ├── reusable-ansible-molecule.yml # Reusable Molecule test runner
-│   │   ├── reusable-ansible-publish.yml # Reusable Galaxy publish template
-│   │   ├── reusable-ansible-security.yml # Reusable TruffleHog & Trivy scans
+│   │   ├── ansible-ci.yml    # Ansible CI orchestrator
+│   │   ├── ansible-lint.yml  # Reusable Ansible lint validations
+│   │   ├── ansible-meta-validate.yml # Reusable Galaxy metadata validation
+│   │   ├── ansible-molecule.yml # Reusable Molecule test runner
+│   │   ├── ansible-publish.yml # Reusable Galaxy publish template
+│   │   ├── ansible-security.yml # Reusable TruffleHog & Trivy scans
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
 │   └── dependabot.yml                 # Actions dependency updates config

@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: cicd-${{ github.ref == 'refs/heads/main' && 'production' || 'pull-request' }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
@@ -162,7 +162,7 @@ jobs:
       contents: read
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
@@ -184,7 +184,7 @@ jobs:
       contents: read
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
@@ -206,7 +206,7 @@ jobs:
       contents: read
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
@@ -230,36 +230,42 @@ jobs:
       contents: read
     steps:
       - name: "⚙️ Evaluate results"
+        env:
+          YAML_LINT_RESULT: ${{ needs.yaml-lint.result }}
+          ACTIONS_LINT_RESULT: ${{ needs.actions-lint.result }}
+          BRANCH_NAME_LINT_RESULT: ${{ needs.branch-name-lint.result }}
+          PR_TITLE_LINT_RESULT: ${{ needs.pr-title-lint.result }}
+          ZIZMOR_RESULT: ${{ needs.zizmor-scan.result }}
         run: |
-          echo "YAML Lint: ${{ needs.yaml-lint.result }}"
-          echo "Actions Lint: ${{ needs.actions-lint.result }}"
-          echo "Branch Name Lint: ${{ needs.branch-name-lint.result }}"
-          echo "PR Title Lint: ${{ needs.pr-title-lint.result }}"
-          echo "Zizmor Scan: ${{ needs.zizmor-scan.result }}"
+          echo "YAML Lint:        $YAML_LINT_RESULT"
+          echo "Actions Lint:     $ACTIONS_LINT_RESULT"
+          echo "Branch Name Lint: $BRANCH_NAME_LINT_RESULT"
+          echo "PR Title Lint:    $PR_TITLE_LINT_RESULT"
+          echo "Zizmor Scan:      $ZIZMOR_RESULT"
 
           has_failures=0
 
-          if [[ "${{ needs.branch-name-lint.result }}" == "failure" || "${{ needs.branch-name-lint.result }}" == "cancelled" ]]; then
+          if [[ "$BRANCH_NAME_LINT_RESULT" == "failure" || "$BRANCH_NAME_LINT_RESULT" == "cancelled" ]]; then
             echo "::error::Branch Name Validation failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.pr-title-lint.result }}" == "failure" || "${{ needs.pr-title-lint.result }}" == "cancelled" ]]; then
+          if [[ "$PR_TITLE_LINT_RESULT" == "failure" || "$PR_TITLE_LINT_RESULT" == "cancelled" ]]; then
             echo "::error::PR Title Validation failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.yaml-lint.result }}" == "failure" || "${{ needs.yaml-lint.result }}" == "cancelled" ]]; then
+          if [[ "$YAML_LINT_RESULT" == "failure" || "$YAML_LINT_RESULT" == "cancelled" ]]; then
             echo "::error::YAML Lint failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.actions-lint.result }}" == "failure" || "${{ needs.actions-lint.result }}" == "cancelled" ]]; then
+          if [[ "$ACTIONS_LINT_RESULT" == "failure" || "$ACTIONS_LINT_RESULT" == "cancelled" ]]; then
             echo "::error::Actions Lint failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.zizmor-scan.result }}" == "failure" || "${{ needs.zizmor-scan.result }}" == "cancelled" ]]; then
+          if [[ "$ZIZMOR_RESULT" == "failure" || "$ZIZMOR_RESULT" == "cancelled" ]]; then
             echo "::error::Zizmor Scan failed or was cancelled"
             has_failures=1
           fi
