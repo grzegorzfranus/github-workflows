@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -49,7 +49,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
@@ -83,18 +83,21 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"
+        env:
+          SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
+          IAC_SCAN_RESULT: ${{ needs.iac-scan.result }}
         run: |
-          echo "Secret Scan (TruffleHog): ${{ needs.secret-scan.result }}"
-          echo "IaC Scan (Trivy):         ${{ needs.iac-scan.result }}"
+          echo "Secret Scan (TruffleHog): $SECRET_SCAN_RESULT"
+          echo "IaC Scan (Trivy):         $IAC_SCAN_RESULT"
 
           has_failures=0
 
-          if [[ "${{ needs.secret-scan.result }}" == "failure" || "${{ needs.secret-scan.result }}" == "cancelled" ]]; then
+          if [[ "$SECRET_SCAN_RESULT" == "failure" || "$SECRET_SCAN_RESULT" == "cancelled" ]]; then
             echo "::error::TruffleHog secret scanning failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.iac-scan.result }}" == "failure" || "${{ needs.iac-scan.result }}" == "cancelled" ]]; then
+          if [[ "$IAC_SCAN_RESULT" == "failure" || "$IAC_SCAN_RESULT" == "cancelled" ]]; then
             echo "::error::Trivy IaC scanning failed or was cancelled"
             has_failures=1
           fi

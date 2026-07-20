@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
@@ -111,7 +111,7 @@ jobs:
         distro: ${{ fromJSON(inputs.molecule-distros) }}
     steps:
       - name: "🔍 Checkout repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
@@ -157,18 +157,21 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"
+        env:
+          SYNTAX_CHECK_RESULT: ${{ needs.syntax-check.result }}
+          MOLECULE_TEST_RESULT: ${{ needs.molecule-test.result }}
         run: |
-          echo "Syntax Check:  ${{ needs.syntax-check.result }}"
-          echo "Molecule Test: ${{ needs.molecule-test.result }}"
+          echo "Syntax Check:  $SYNTAX_CHECK_RESULT"
+          echo "Molecule Test: $MOLECULE_TEST_RESULT"
 
           has_failures=0
 
-          if [[ "${{ needs.syntax-check.result }}" == "failure" || "${{ needs.syntax-check.result }}" == "cancelled" ]]; then
+          if [[ "$SYNTAX_CHECK_RESULT" == "failure" || "$SYNTAX_CHECK_RESULT" == "cancelled" ]]; then
             echo "::error::Playbook Syntax Check failed or was cancelled"
             has_failures=1
           fi
 
-          if [[ "${{ needs.molecule-test.result }}" == "failure" || "${{ needs.molecule-test.result }}" == "cancelled" ]]; then
+          if [[ "$MOLECULE_TEST_RESULT" == "failure" || "$MOLECULE_TEST_RESULT" == "cancelled" ]]; then
             echo "::error::Molecule Test failed or was cancelled"
             has_failures=1
           fi

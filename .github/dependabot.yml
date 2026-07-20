@@ -13,9 +13,8 @@ updates:
       - "dependencies"
       - "github-actions"
     commit-message:
-      # Prefix remains 'fix' intentionally: updating actions modifies the workflows
-      # published by this repo, which triggers a patch release for downstream consumers.
-      prefix: "fix"
+      # Prefix configured to 'build' for action dependency updates
+      prefix: "build"
       include: "scope"
     groups:
       minor-and-patch:
