@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.0.0...v3.0.1) (2026-07-20)
+
+
+### Miscellaneous
+
+* align workflows with comlia platform standards ([#34](https://github.com/grzegorzfranus/github-workflows/issues/34)) ([a6a452e](https://github.com/grzegorzfranus/github-workflows/commit/a6a452e50affb3b1b4003a03f9e2763438583558))
+
 ## [3.0.0](https://github.com/grzegorzfranus/github-workflows/compare/v2.0.0...v3.0.0) (2026-07-19)
 
 
