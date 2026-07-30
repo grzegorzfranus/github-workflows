@@ -193,6 +193,7 @@ The primary CI pipeline. It coordinates the execution of linting, security, meta
 | `enable-trufflehog` | boolean | no | `true` | Enable TruffleHog secret scanning |
 | `enable-trivy` | boolean | no | `true` | Enable Trivy IaC security scans |
 | `enable-galaxy-metadata-check` | boolean | no | `true` | Enable Galaxy `meta/main.yml` validation (dedicated ansible-meta-validate.yml) |
+| `vars-validation-mode` | string | no | `"warn"` | Variable consistency validation: `'off'`, `'warn'` (report only), or `'error'` (fail build). Note: variable validation only executes when `enable-galaxy-metadata-check` is `true`, as both reside in the same job. |
 | `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
 | `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
 | `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
@@ -216,7 +217,7 @@ concurrency:
 
 jobs:
   ansible-ci:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.0
     with:
       ansible-lint-profile: "production"
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
@@ -225,13 +226,61 @@ jobs:
       enable-trufflehog: true
       enable-trivy: true
       enable-galaxy-metadata-check: true
+      vars-validation-mode: "warn"
 ```
 
 ---
 
-#### 2. Ansible Galaxy Metadata Validation (`ansible-meta-validate.yml`)
+#### 2. Ansible Galaxy Metadata & Variable Validation (`ansible-meta-validate.yml`)
 
-Dedicated validation of Ansible Galaxy metadata structure and requirements. Validates presence and types of required fields, description length boundaries (255 chars limit, 20 chars minimum warning), platforms dictionary structure, tags conventions, role naming conventions, and dependencies format.
+Dedicated validation of Ansible Galaxy metadata structure (`meta/main.yml`) and variable consistency across role surfaces.
+
+##### Variable Consistency Validation
+
+Checks role variable declarations and usage across four surfaces (`defaults/main.yml`, `meta/argument_specs.yml`, `tasks/assert.yml`, `README.md`) and detects dead or unused variables.
+
+**Checks Performed:**
+
+1. Every key in `defaults/main.yml` exists in `meta/argument_specs.yml` (`error` class).
+2. Every option in `meta/argument_specs.yml` exists in `defaults/main.yml` (`error` class).
+3. Every key in `defaults/main.yml` is referenced in `tasks/assert.yml` (`error` class).
+4. Every key in `defaults/main.yml` is referenced in `README.md` (`error` class).
+5. Dead-variable detection: tests whether every key in `defaults/main.yml` is referenced in `tasks/` (excl. `assert.yml`), `handlers/`, `templates/` or `vars/`. Classifies into four outcomes:
+   - Referenced outside `assert.yml`: `alive` (no report).
+   - Referenced only in `assert.yml` and listed in `ignore_dead`: `notice` (intentional opt-in guard, waived).
+   - Referenced only in `assert.yml` without a waiver: `warning` (unwaived assert-only guard to review).
+   - Referenced nowhere: `warning` (genuinely dead).
+6. Literal default value parity between `defaults/main.yml` and `argument_specs` (`warning` class; skips Jinja expressions `{{ ... }}` and `""` sentinels).
+7. Waiver entries lacking a non-empty `reason` (`error` class).
+8. Stale waiver detection (`warning` class).
+9. Sub-options under `options:` in `argument_specs` declaring their own `default:` (`warning` class).
+10. Internal `__`-prefixed variables in `vars/**/*.yml` referenced at least once (`warning` class).
+
+**Graceful Degradation:**
+- Missing `defaults/main.yml`: skips validation with a `notice` annotation (e.g. stub repositories).
+- Missing `meta/argument_specs.yml`: skips checks 1, 2, 6, 9 with a warning.
+- Missing `tasks/assert.yml`: skips check 3 with a warning.
+
+**Rollout Strategy:**
+1. **`v3.1.0` (Stage 1)**: `vars-validation-mode` defaults to `warn`. Checks run and report to `$GITHUB_STEP_SUMMARY` without failing CI builds.
+2. **Stage 2 (Future Major)**: Default mode flips to `error`. Individual roles can pin `vars-validation-mode: warn` if not ready.
+
+**Role Waiver Format (`.ansible-vars-validate.yml`):**
+
+Relying on optional dot-config at role root. Every entry **must** supply a non-empty `reason`.
+
+> **Note:** `ignore_dead` serves a dual purpose — it silences genuinely dead variables and demotes waived assert-only guards from a warning to an informational notice.
+
+```yaml
+# .ansible-vars-validate.yml
+---
+ignore_dead:
+  - name: docker_tcp_insecure_acknowledged
+    reason: "Opt-in security acknowledgement consumed only by tasks/assert.yml"
+ignore_unasserted:
+  - name: appname_freeform_extra
+    reason: "Arbitrary user mapping, no meaningful runtime constraint"
+```
 
 **Inputs:**
 
@@ -239,15 +288,17 @@ Dedicated validation of Ansible Galaxy metadata structure and requirements. Vali
 | --- | --- | --- | --- | --- |
 | `python-version` | string | no | `"3.12"` | Python version to use on the runner |
 | `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+| `vars-validation-mode` | string | no | `"warn"` | Validation mode: `'off'`, `'warn'`, or `'error'` |
 
 **Usage Example:**
 
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.0
     with:
       python-version: "3.12"
+      vars-validation-mode: "warn"
 ```
 
 ---
@@ -286,11 +337,11 @@ permissions:
 
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.0
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.0
     with:
       python-version: "3.12"
     secrets:
@@ -318,7 +369,7 @@ Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note
 ```yaml
 jobs:
   lint:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v3.1.0
     with:
       ansible-lint-profile: "production"
 ```
@@ -342,7 +393,7 @@ TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be i
 ```yaml
 jobs:
   security:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v3.1.0
     with:
       enable-trufflehog: true
       enable-trivy: true
@@ -370,7 +421,7 @@ Syntax checks and Molecule integration test matrix. Creates a test matrix from `
 ```yaml
 jobs:
   molecule:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v3.1.0
     with:
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
       molecule-scenarios: '["default"]'
@@ -383,6 +434,8 @@ jobs:
 ## 🔄 Migration to v4
 
 Version `v4.0.0` introduces a breaking change by stripping the `reusable-` prefix from all reusable workflow filenames. This simplifies paths and aligns with standard practices.
+
+> **Note:** This section describes the unreleased major version migration path (prefix removal was applied to workflow files in v3.x, and the formal major bump to v4 is scheduled for future release).
 
 ### Workflow Name Mapping
 
@@ -414,11 +467,11 @@ If using the orchestrator `ansible-ci.yml`, no configuration changes are require
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.0
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.0.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.0
     with:
       python-version: "3.12"
     secrets:

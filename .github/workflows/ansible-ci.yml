@@ -32,6 +32,10 @@ on:
         description: "Enable Galaxy meta/main.yml validation (dedicated reusable-ansible-meta-validate.yml)"
         type: boolean
         default: true
+      vars-validation-mode:
+        description: "Variable consistency validation: 'off', 'warn' (report only) or 'error' (fail the build)"
+        type: string
+        default: "warn"
       molecule-timeout:
         description: "Timeout in minutes for Molecule test jobs"
         type: number
@@ -83,6 +87,7 @@ jobs:
     with:
       python-version: ${{ inputs.python-version }}
       runner: ${{ inputs.runner }}
+      vars-validation-mode: ${{ inputs.vars-validation-mode }}
 
   # ================================================================
   # 3. RUN MOLECULE INTEGRATION TESTS
