@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/grzegorzfranus/github-workflows/compare/v3.0.1...v3.1.0) (2026-07-30)
+
+
+### Features
+
+* validate Ansible role variable consistency across defaults, argument_specs, assert and README ([#38](https://github.com/grzegorzfranus/github-workflows/issues/38)) ([67259c1](https://github.com/grzegorzfranus/github-workflows/commit/67259c1b515bee8681b1a0acb6395e7d3c00bd8c))
+
 ## [3.0.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.0.0...v3.0.1) (2026-07-20)
 
 
