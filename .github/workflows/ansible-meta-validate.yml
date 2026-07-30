@@ -353,22 +353,25 @@ jobs:
                       undocumented_vars.append(var)
                       errors.append(f"Variable '{var}' in defaults/main.yml not referenced in README.md")
 
-          # Check 5
+          # Check 5 (Updated per P1: waiver acts as discriminator for assert-only guards)
           for var in defaults_keys:
               pattern = r'\b' + re.escape(var) + r'\b'
               in_outside = re.search(pattern, corpus_outside_assert_text)
               if in_outside:
                   continue
+
               in_assert = re.search(pattern, assert_content) if has_assert else None
-              if in_assert:
-                  assert_only_vars.append(var)
-                  notices.append(f"Variable '{var}' referenced only in tasks/assert.yml (assert-only guard)")
+              if var in ignore_dead:
+                  used_waivers_dead.add(var)
+                  if in_assert:
+                      assert_only_vars.append(var)
+                      notices.append(f"Variable '{var}' referenced only in tasks/assert.yml (assert-only guard, waived)")
               else:
-                  if var in ignore_dead:
-                      used_waivers_dead.add(var)
+                  dead_vars.append(var)
+                  if in_assert:
+                      warnings.append(f"Variable '{var}' declared in defaults/main.yml is referenced only in tasks/assert.yml")
                   else:
-                      dead_vars.append(var)
-                      warnings.append(f"Variable '{var}' declared in defaults/main.yml is unused in tasks/handlers/templates/vars")
+                      warnings.append(f"Variable '{var}' declared in defaults/main.yml is unused in tasks/handlers/templates/vars/assert")
 
           # Check 6
           if has_arg_specs:
@@ -476,7 +479,7 @@ jobs:
               f"| Not validated in `tasks/assert.yml` | {fmt_row(unasserted_vars, True)} |",
               f"| Not documented in `README.md` | {fmt_row(undocumented_vars, True)} |",
               f"| Declared but unused | {fmt_row(dead_vars, False)} |",
-              f"| Referenced only in `assert.yml` | {f'ℹ️ {len(assert_only_vars)} — ' + ', '.join(assert_only_vars[:3]) if assert_only_vars else '✅ 0'} |",
+              f"| Referenced only in `assert.yml` (waived) | {f'ℹ️ {len(assert_only_vars)} — ' + ', '.join(assert_only_vars[:3]) if assert_only_vars else '✅ 0'} |",
               f"| Sub-options without a `default:` | {fmt_row(subopt_missing_default, False)} |",
               f"| Internal `__` variables unused | {fmt_row(unused_internal_vars, False)} |",
               f"| Waivers applied | {len(used_waivers_dead) + len(used_waivers_unasserted)} |"
