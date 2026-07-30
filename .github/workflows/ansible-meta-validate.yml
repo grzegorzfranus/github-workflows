@@ -369,7 +369,7 @@ jobs:
               else:
                   dead_vars.append(var)
                   if in_assert:
-                      warnings.append(f"Variable '{var}' declared in defaults/main.yml is referenced only in tasks/assert.yml")
+                      warnings.append(f"Variable '{var}' declared in defaults/main.yml is referenced only in tasks/assert.yml (add to ignore_dead in .ansible-vars-validate.yml if intentional)")
                   else:
                       warnings.append(f"Variable '{var}' declared in defaults/main.yml is unused in tasks/handlers/templates/vars/assert")
 

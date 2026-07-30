@@ -245,7 +245,11 @@ Checks role variable declarations and usage across four surfaces (`defaults/main
 2. Every option in `meta/argument_specs.yml` exists in `defaults/main.yml` (`error` class).
 3. Every key in `defaults/main.yml` is referenced in `tasks/assert.yml` (`error` class).
 4. Every key in `defaults/main.yml` is referenced in `README.md` (`error` class).
-5. Dead-variable detection: every key in `defaults/main.yml` is referenced in `tasks/` (excl. `assert.yml`), `handlers/`, `templates/` or `vars/`. Classifies variables as `alive`, `notice` (assert-only opt-in guard), or `warning` (genuinely dead).
+5. Dead-variable detection: tests whether every key in `defaults/main.yml` is referenced in `tasks/` (excl. `assert.yml`), `handlers/`, `templates/` or `vars/`. Classifies into four outcomes:
+   - Referenced outside `assert.yml`: `alive` (no report).
+   - Referenced only in `assert.yml` and listed in `ignore_dead`: `notice` (intentional opt-in guard, waived).
+   - Referenced only in `assert.yml` without a waiver: `warning` (unwaived assert-only guard to review).
+   - Referenced nowhere: `warning` (genuinely dead).
 6. Literal default value parity between `defaults/main.yml` and `argument_specs` (`warning` class; skips Jinja expressions `{{ ... }}` and `""` sentinels).
 7. Waiver entries lacking a non-empty `reason` (`error` class).
 8. Stale waiver detection (`warning` class).
@@ -264,6 +268,8 @@ Checks role variable declarations and usage across four surfaces (`defaults/main
 **Role Waiver Format (`.ansible-vars-validate.yml`):**
 
 Relying on optional dot-config at role root. Every entry **must** supply a non-empty `reason`.
+
+> **Note:** `ignore_dead` serves a dual purpose — it silences genuinely dead variables and demotes waived assert-only guards from a warning to an informational notice.
 
 ```yaml
 # .ansible-vars-validate.yml
