@@ -12,6 +12,10 @@ on:
         description: "Runner label to execute jobs on"
         type: string
         default: "ubuntu-latest"
+      vars-validation-mode:
+        description: "Variable consistency validation: 'off', 'warn' (report only) or 'error' (fail the build)"
+        type: string
+        default: "warn"
 
 permissions:
   contents: read
@@ -152,3 +156,337 @@ jobs:
             echo "- **File**: \`meta/main.yml\`"
             echo "- **Status**: Ready for Galaxy publish"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "🔍 Validate Ansible role variable consistency"
+        env:
+          VARS_VALIDATION_MODE: ${{ inputs.vars-validation-mode }}
+        run: |
+          python3 << 'EOF'
+          import os
+          import re
+          import sys
+          import yaml
+
+          mode = os.environ.get('VARS_VALIDATION_MODE', 'warn').strip().lower()
+          if mode not in ('off', 'warn', 'error'):
+              print(f"::error::Invalid vars-validation-mode: '{mode}'. Must be 'off', 'warn', or 'error'.")
+              sys.exit(1)
+
+          if mode == 'off':
+              print("Variable consistency validation disabled (mode='off').")
+              sys.exit(0)
+
+          def read_file_text(path):
+              if not os.path.isfile(path):
+                  return ""
+              try:
+                  with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                      return f.read()
+              except Exception:
+                  return ""
+
+          def get_matching_files(dir_path, extensions=None):
+              res = []
+              if not os.path.isdir(dir_path):
+                  return res
+              for root, _, files in os.walk(dir_path):
+                  for file in files:
+                      if extensions is None or any(file.endswith(ext) for ext in extensions):
+                          res.append(os.path.join(root, file))
+              return res
+
+          errors = []
+          warnings = []
+          notices = []
+
+          defaults_path = 'defaults/main.yml'
+          if not os.path.isfile(defaults_path):
+              print("::notice::defaults/main.yml missing; skipping variable consistency validation")
+              step_summary = os.environ.get('GITHUB_STEP_SUMMARY')
+              if step_summary:
+                  with open(step_summary, 'a', encoding='utf-8') as f:
+                      f.write(f"## 📋 Variable Consistency\n\nMode: `{mode}`\n\nℹ️ `defaults/main.yml` missing — skipped variable consistency validation.\n")
+              sys.exit(0)
+
+          defaults_data = None
+          try:
+              with open(defaults_path, 'r', encoding='utf-8') as f:
+                  defaults_data = yaml.safe_load(f)
+          except Exception as e:
+              errors.append(f"Failed to parse defaults/main.yml: {e}")
+              defaults_data = {}
+
+          if not isinstance(defaults_data, dict):
+              defaults_data = {}
+
+          defaults_keys = list(defaults_data.keys())
+
+          # Waiver file loading
+          waiver_path = '.ansible-vars-validate.yml'
+          ignore_dead = []
+          ignore_unasserted = []
+          used_waivers_dead = set()
+          used_waivers_unasserted = set()
+
+          if os.path.isfile(waiver_path):
+              try:
+                  with open(waiver_path, 'r', encoding='utf-8') as f:
+                      waiver_data = yaml.safe_load(f) or {}
+                  if isinstance(waiver_data, dict):
+                      raw_dead = waiver_data.get('ignore_dead', []) or []
+                      raw_unasserted = waiver_data.get('ignore_unasserted', []) or []
+
+                      for idx, item in enumerate(raw_dead):
+                          if not isinstance(item, dict):
+                              errors.append(f"Waiver entry #{idx} in ignore_dead must be a dict")
+                              continue
+                          name = item.get('name')
+                          reason = item.get('reason')
+                          if not name:
+                              errors.append(f"Waiver entry #{idx} in ignore_dead missing 'name'")
+                              continue
+                          if not reason or not isinstance(reason, str) or not reason.strip():
+                              errors.append(f"Waiver entry for '{name}' in 'ignore_dead' lacks a non-empty 'reason'")
+                          ignore_dead.append(name)
+
+                      for idx, item in enumerate(raw_unasserted):
+                          if not isinstance(item, dict):
+                              errors.append(f"Waiver entry #{idx} in ignore_unasserted must be a dict")
+                              continue
+                          name = item.get('name')
+                          reason = item.get('reason')
+                          if not name:
+                              errors.append(f"Waiver entry #{idx} in ignore_unasserted missing 'name'")
+                              continue
+                          if not reason or not isinstance(reason, str) or not reason.strip():
+                              errors.append(f"Waiver entry for '{name}' in 'ignore_unasserted' lacks a non-empty 'reason'")
+                          ignore_unasserted.append(name)
+              except Exception as e:
+                  errors.append(f"Failed to parse {waiver_path}: {e}")
+
+          # Argument specs
+          arg_specs_path = 'meta/argument_specs.yml'
+          arg_specs_options = {}
+          has_arg_specs = os.path.isfile(arg_specs_path)
+
+          if has_arg_specs:
+              try:
+                  with open(arg_specs_path, 'r', encoding='utf-8') as f:
+                      arg_specs_data = yaml.safe_load(f) or {}
+                  if isinstance(arg_specs_data, dict):
+                      specs = arg_specs_data.get('argument_specs', {})
+                      if isinstance(specs, dict):
+                          for spec_name, spec_content in specs.items():
+                              if isinstance(spec_content, dict) and isinstance(spec_content.get('options'), dict):
+                                  arg_specs_options.update(spec_content['options'])
+              except Exception as e:
+                  errors.append(f"Failed to parse meta/argument_specs.yml: {e}")
+          else:
+              warnings.append("meta/argument_specs.yml is missing — checks 1, 2, 6 and 9 skipped")
+
+          # Assert.yml
+          assert_path = 'tasks/assert.yml'
+          has_assert = os.path.isfile(assert_path)
+          assert_content = read_file_text(assert_path) if has_assert else ""
+          if not has_assert:
+              warnings.append("tasks/assert.yml is missing — check 3 skipped")
+
+          # README.md
+          readme_path = 'README.md'
+          has_readme = os.path.isfile(readme_path)
+          readme_content = read_file_text(readme_path) if has_readme else ""
+          if not has_readme:
+              warnings.append("README.md is missing — check 4 skipped")
+
+          task_files = get_matching_files('tasks')
+          handler_files = get_matching_files('handlers')
+          template_files = get_matching_files('templates')
+          vars_files = get_matching_files('vars')
+
+          corpus_outside_assert = []
+          for p in task_files:
+              if os.path.normpath(p) != os.path.normpath(assert_path):
+                  corpus_outside_assert.append(read_file_text(p))
+          for p in handler_files + template_files + vars_files:
+              corpus_outside_assert.append(read_file_text(p))
+          corpus_outside_assert_text = "\n".join(corpus_outside_assert)
+
+          missing_arg_specs = []
+          missing_defaults = []
+          unasserted_vars = []
+          undocumented_vars = []
+          dead_vars = []
+          assert_only_vars = []
+          subopt_missing_default = []
+          unused_internal_vars = []
+
+          # Check 1
+          if has_arg_specs:
+              for var in defaults_keys:
+                  if var not in arg_specs_options:
+                      missing_arg_specs.append(var)
+                      errors.append(f"Variable '{var}' in defaults/main.yml missing from meta/argument_specs.yml")
+
+          # Check 2
+          if has_arg_specs:
+              for opt in arg_specs_options.keys():
+                  if opt not in defaults_data:
+                      missing_defaults.append(opt)
+                      errors.append(f"Option '{opt}' in meta/argument_specs.yml missing from defaults/main.yml")
+
+          # Check 3
+          if has_assert:
+              for var in defaults_keys:
+                  pattern = r'\b' + re.escape(var) + r'\b'
+                  if not re.search(pattern, assert_content):
+                      if var in ignore_unasserted:
+                          used_waivers_unasserted.add(var)
+                      else:
+                          unasserted_vars.append(var)
+                          errors.append(f"Variable '{var}' in defaults/main.yml not referenced in tasks/assert.yml")
+
+          # Check 4
+          if has_readme:
+              for var in defaults_keys:
+                  pattern = r'\b' + re.escape(var) + r'\b'
+                  if not re.search(pattern, readme_content):
+                      undocumented_vars.append(var)
+                      errors.append(f"Variable '{var}' in defaults/main.yml not referenced in README.md")
+
+          # Check 5
+          for var in defaults_keys:
+              pattern = r'\b' + re.escape(var) + r'\b'
+              in_outside = re.search(pattern, corpus_outside_assert_text)
+              if in_outside:
+                  continue
+              in_assert = re.search(pattern, assert_content) if has_assert else None
+              if in_assert:
+                  assert_only_vars.append(var)
+                  notices.append(f"Variable '{var}' referenced only in tasks/assert.yml (assert-only guard)")
+              else:
+                  if var in ignore_dead:
+                      used_waivers_dead.add(var)
+                  else:
+                      dead_vars.append(var)
+                      warnings.append(f"Variable '{var}' declared in defaults/main.yml is unused in tasks/handlers/templates/vars")
+
+          # Check 6
+          if has_arg_specs:
+              for var in defaults_keys:
+                  if var in arg_specs_options:
+                      opt = arg_specs_options[var]
+                      if isinstance(opt, dict) and 'default' in opt:
+                          def_val = defaults_data[var]
+                          spec_val = opt['default']
+                          def_str = str(def_val) if def_val is not None else ""
+                          spec_str = str(spec_val) if spec_val is not None else ""
+
+                          if '{{' in def_str or '{{' in spec_str or spec_str == "":
+                              continue
+
+                          if def_val != spec_val and def_str != spec_str:
+                              warnings.append(f"Default value mismatch for '{var}': defaults/main.yml has {def_val!r}, argument_specs has {spec_val!r}")
+
+          # Check 8
+          for w in ignore_dead:
+              if w not in used_waivers_dead:
+                  warnings.append(f"Stale waiver for '{w}' in 'ignore_dead' (variable was not flagged)")
+          for w in ignore_unasserted:
+              if w not in used_waivers_unasserted:
+                  warnings.append(f"Stale waiver for '{w}' in 'ignore_unasserted' (variable was not flagged)")
+
+          # Check 9
+          if has_arg_specs:
+              for top_key, opt in arg_specs_options.items():
+                  if isinstance(opt, dict) and isinstance(opt.get('options'), dict):
+                      for sub_key, sub_opt in opt['options'].items():
+                          if isinstance(sub_opt, dict) and 'default' not in sub_opt:
+                              subopt_missing_default.append(f"{top_key}.{sub_key}")
+                              warnings.append(f"Sub-option '{top_key}.{sub_key}' under options in meta/argument_specs.yml missing explicit 'default:'")
+
+          # Check 10
+          if vars_files:
+              declared_internal = {}
+              for vfile in vars_files:
+                  try:
+                      with open(vfile, 'r', encoding='utf-8') as f:
+                          vdata = yaml.safe_load(f)
+                      if isinstance(vdata, dict):
+                          for k in vdata.keys():
+                              if isinstance(k, str) and k.startswith('__'):
+                                  declared_internal.setdefault(k, []).append(vfile)
+                  except Exception:
+                      pass
+
+              all_corpus_files = task_files + handler_files + template_files + vars_files
+              all_corpus_texts = {f: read_file_text(f) for f in all_corpus_files}
+
+              for ivar, vdecl_files in declared_internal.items():
+                  pattern = r'\b' + re.escape(ivar) + r'\b'
+                  total_matches = 0
+                  non_decl_matches = 0
+                  for fpath, text in all_corpus_texts.items():
+                      matches = len(re.findall(pattern, text))
+                      total_matches += matches
+                      if fpath not in vdecl_files:
+                          non_decl_matches += matches
+
+                  if non_decl_matches == 0 and total_matches <= len(vdecl_files):
+                      unused_internal_vars.append(ivar)
+                      warnings.append(f"Internal variable '{ivar}' declared in vars/ is never referenced elsewhere")
+
+          # Annotate output in log
+          print(f"Variable validation results (mode={mode}):")
+          for n in notices:
+              print(f"::notice::{n}")
+          for w in warnings:
+              print(f"::warning::{w}")
+
+          if errors:
+              annotation_tag = 'warning' if mode == 'warn' else 'error'
+              for e in errors:
+                  print(f"::{annotation_tag}::{e}")
+
+          # Generate Step Summary Table
+          def fmt_row(items, is_error=True):
+              if not items:
+                  return "✅ 0"
+              icon = '❌' if (is_error and mode == 'error') else '⚠️'
+              items_str = ', '.join(items[:3])
+              if len(items) > 3:
+                  items_str += f" (+{len(items)-3} more)"
+              return f"{icon} {len(items)} — {items_str}"
+
+          summary_lines = [
+              "## 📋 Variable Consistency",
+              "",
+              f"Mode: `{mode}`",
+              ""
+          ]
+
+          if mode == 'warn':
+              summary_lines.append("> ℹ️ Running in warn mode — findings do not fail the build. See Plan 05 for the rollout to `error`.\n")
+
+          summary_lines.extend([
+              "| Surface | Result |",
+              "|---------|--------|",
+              f"| Variables in `defaults/main.yml` | {len(defaults_keys)} |",
+              f"| Missing from `meta/argument_specs.yml` | {fmt_row(missing_arg_specs, True)} |",
+              f"| Missing from `defaults/main.yml` | {fmt_row(missing_defaults, True)} |",
+              f"| Not validated in `tasks/assert.yml` | {fmt_row(unasserted_vars, True)} |",
+              f"| Not documented in `README.md` | {fmt_row(undocumented_vars, True)} |",
+              f"| Declared but unused | {fmt_row(dead_vars, False)} |",
+              f"| Referenced only in `assert.yml` | {f'ℹ️ {len(assert_only_vars)} — ' + ', '.join(assert_only_vars[:3]) if assert_only_vars else '✅ 0'} |",
+              f"| Sub-options without a `default:` | {fmt_row(subopt_missing_default, False)} |",
+              f"| Internal `__` variables unused | {fmt_row(unused_internal_vars, False)} |",
+              f"| Waivers applied | {len(used_waivers_dead) + len(used_waivers_unasserted)} |"
+          ])
+
+          step_summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if step_summary:
+              with open(step_summary, 'a', encoding='utf-8') as f:
+                  f.write("\n".join(summary_lines) + "\n")
+
+          if errors and mode == 'error':
+              sys.exit(1)
+          EOF
