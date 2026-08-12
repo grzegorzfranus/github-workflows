@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.1...v3.1.2) (2026-08-12)
+
+
+### Bug Fixes
+
+* specify explicit trivy release version in ansible security workflow ([#46](https://github.com/grzegorzfranus/github-workflows/issues/46)) ([9f73a48](https://github.com/grzegorzfranus/github-workflows/commit/9f73a486097d0d229671935fa1a47ccd68374ba4))
+
 ## [3.1.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.0...v3.1.1) (2026-07-30)
 
 
