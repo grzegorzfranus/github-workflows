@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.4](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.3...v3.1.4) (2026-08-29)
+
+
+### CI/CD
+
+* adopt downstream hardening and align action pins ([#49](https://github.com/grzegorzfranus/github-workflows/issues/49)) ([#50](https://github.com/grzegorzfranus/github-workflows/issues/50)) ([7adbe3a](https://github.com/grzegorzfranus/github-workflows/commit/7adbe3a89815c763554c9a2ea20e9b21c5ee8053))
+
 ## [3.1.3](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.2...v3.1.3) (2026-08-13)
 
 
