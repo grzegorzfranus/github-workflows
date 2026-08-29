@@ -174,5 +174,5 @@ jobs:
             echo "| Lint validation | ${{ needs.ansible-lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
             echo "| Security scans | ${{ needs.ansible-security.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
             echo "| Metadata validation | ${{ needs.ansible-meta-validate.result == 'success' && '✅ Passed' || (needs.ansible-meta-validate.result == 'skipped' && '⏭️ Skipped' || '❌ Failed') }} |"
-            echo "| Molecule integration tests | ${{ needs.ansible-molecule.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| Molecule integration tests | ${{ needs.ansible-molecule.result == 'success' && '✅ Passed' || (needs.ansible-molecule.result == 'skipped' && '⏭️ Skipped' || '❌ Failed') }} |"
           } >> "$GITHUB_STEP_SUMMARY"

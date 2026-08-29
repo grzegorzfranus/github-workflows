@@ -167,7 +167,7 @@ jobs:
           persist-credentials: false
 
       - name: "🔍 Lint workflow files"
-        run: pipx run yamllint .github/workflows/*.yml
+        run: pipx run yamllint==1.38.0 .github/workflows/*.yml
 
   # ================================================================
   # 3. GITHUB ACTIONS SCHEMA VALIDATION
@@ -211,7 +211,7 @@ jobs:
           persist-credentials: false
 
       - name: "🔒 Run zizmor"
-        run: pipx run zizmor .github/workflows
+        run: pipx run zizmor==1.27.0 .github/workflows
 
   # ================================================================
   # 4. MERGE CHECK — Single mandatory gate for PR merges
