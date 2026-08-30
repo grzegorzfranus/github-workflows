@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.8](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.7...v3.1.8) (2026-08-30)
+
+
+### CI/CD
+
+* enable markdownlint and remove the dead scripts directory ([#63](https://github.com/grzegorzfranus/github-workflows/issues/63)) ([#64](https://github.com/grzegorzfranus/github-workflows/issues/64)) ([841cdf5](https://github.com/grzegorzfranus/github-workflows/commit/841cdf537d9972c8e50467d49a7ddd26b7f9bd1a))
+
 ## [3.1.7](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.6...v3.1.7) (2026-08-30)
 
 
