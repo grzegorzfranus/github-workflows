@@ -109,7 +109,7 @@ This repository uses automated dependency management configuration defined under
 
 ### For developers of this repository
 
-- **Node.js**: Required for Husky Git hooks and commitlint (`npm install`).
+- **pre-commit**: Required for the local lint and commit message hooks (`pip install pre-commit`).
 - **Local Linters**: `yamllint`, `actionlint`, and `zizmor` are required for local verification before submitting code changes.
 - **GitHub Runner**: Workflows are designed and tested on standard `ubuntu-latest` environments.
 
@@ -128,7 +128,8 @@ This repository uses automated dependency management configuration defined under
 
 Initialize development dependencies and activate local Git Hooks:
 ```bash
-npm install
+pre-commit install --hook-type pre-push
+pre-commit install --hook-type commit-msg
 ```
 
 ### 2. Manual Verification
@@ -631,21 +632,17 @@ github-workflows/
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
 │   └── dependabot.yml                 # Actions dependency updates config
-├── .husky/                            # Git hooks configuration (Husky)
-│   ├── commit-msg                     # Commit message validation hook
-│   └── pre-commit                     # Pre-commit workflows validation hook
 ├── scripts/
 │   └── validate.sh                    # Pre-commit validation runner script
 ├── .gitignore                         # Git ignore configurations
+├── .pre-commit-config.yaml            # Local lint and commit message hooks
 ├── .release-please-manifest.json      # Google Release Please version tracking
 ├── .yamllint                          # yamllint settings
 ├── CHANGELOG.md                       # Repository changelog
 ├── LICENSE                            # Apache-2.0 License
 ├── README.md                          # This documentation
 ├── commitlint.config.js               # Commitlint config file
-├── package.json                       # Node dependencies file
-├── release-please-config.json         # Google Release Please config
-└── package-lock.json                  # Lock file for package.json
+└── release-please-config.json         # Google Release Please config
 ```
 
 ---
