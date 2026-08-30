@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.1.5](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.4...v3.1.5) (2026-08-30)
+
+
+### Bug Fixes
+
+* keep the TruffleHog action SHA and binary version pins in step ([#52](https://github.com/grzegorzfranus/github-workflows/issues/52)) ([#53](https://github.com/grzegorzfranus/github-workflows/issues/53)) ([a63cdae](https://github.com/grzegorzfranus/github-workflows/commit/a63cdae2dc68744a7da3c3cc5fde77df662db83f))
+
+
+### CI/CD
+
+* pin actions/checkout to v5.1.0 and ignore v6+ ([#55](https://github.com/grzegorzfranus/github-workflows/issues/55)) ([#56](https://github.com/grzegorzfranus/github-workflows/issues/56)) ([997da91](https://github.com/grzegorzfranus/github-workflows/commit/997da913ddbdb09e09eee4785b887efb35cd0446))
+
 ## [3.1.4](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.3...v3.1.4) (2026-08-29)
 
 
