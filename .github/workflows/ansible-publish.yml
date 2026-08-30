@@ -20,12 +20,11 @@ on:
 permissions:
   contents: read
 
+# Metadata validation is performed by the caller workflow using
+# ansible-meta-validate.yml before invoking this workflow.
 jobs:
   # ================================================================
   # 1. PUBLISH TO GALAXY
-  # ----------------------------------------------------------------
-  # Metadata validation is performed by the caller workflow using
-  # ansible-meta-validate.yml before invoking this workflow.
   # ================================================================
   publish-galaxy:
     name: "📦 Publish to Galaxy"

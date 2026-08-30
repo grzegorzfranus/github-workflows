@@ -17,6 +17,18 @@ This repository serves as a model blueprint ("wzór") for corporate workflows. I
 - 🤖 **Automated Release Management**: Zero-touch versioning, tagging, and changelog generation using Google Release Please.
 - 📋 **Corporate Governance Templates**: Premium templates for pull requests and issues to streamline team review cycles.
 
+## 🧭 Design Principles
+
+| Principle | Rationale | Applied As |
+| --- | --- | --- |
+| **Commit SHA Pinning** | Mutable tags can be repointed at malicious code after review. | Every third-party action is pinned to a 40-character commit SHA with the version in a trailing comment. |
+| **Least Privilege** | A leaked token should be able to do as little as possible. | Every job declares its own `permissions` block rather than inheriting a broad default. |
+| **Fail Fast** | Runner minutes spent on a pull request that cannot merge are wasted. | Branch name and pull request title are validated before any linting or test job runs. |
+| **Reproducible Tooling** | An unpinned linter makes a green run unreproducible a week later. | `pipx run` invocations pin exact tool versions. |
+| **Single Merge Gate** | Branch protection should depend on one status, not a growing list. | All checks feed one aggregated merge gate job. |
+
+---
+
 ## 🎯 Architecture
 
 ### Ansible CI Pipeline
@@ -86,6 +98,9 @@ This repository uses automated dependency management configuration defined under
 - **Groupings**: `minor` and `patch` updates are grouped under a single pull request to reduce PR noise.
 - **Limit**: Maximum of 10 open pull requests at any time.
 - **Cooldown**: 14 days cooldown is applied to updates to ensure stability.
+- **Commit Messages**: Update pull requests use the `build` Conventional Commit prefix with scope included, and carry the `dependencies` and `github-actions` labels.
+- **Held Majors**: `actions/checkout` is pinned to the v5 line and updates to v6 and above are ignored. From v6 onwards checkout writes credentials through an `includeIf "gitdir:"` directive, which fails to match when a self-hosted runner's `_work` directory is a symlink ([actions/checkout#2393](https://github.com/actions/checkout/issues/2393), still open). Patch and minor updates within v5.x are still accepted, so security backports on that line keep arriving.
+- **Coupled Pins**: TruffleHog is pinned twice, once by action SHA and once by the `with: version:` input naming the scanner binary. Dependabot only updates the SHA, so every TruffleHog bump must have the `version:` input adjusted in review or the newer action will keep scanning with the older binary.
 - **Pull Request Review**: All updates are reviewed manually and must pass local verification checks before staging and integration.
 
 ---
@@ -94,7 +109,7 @@ This repository uses automated dependency management configuration defined under
 
 ### For developers of this repository
 
-- **Node.js**: Required for Husky Git hooks and commitlint (`npm install`).
+- **pre-commit**: Required for the local lint and commit message hooks (`pip install pre-commit`).
 - **Local Linters**: `yamllint`, `actionlint`, and `zizmor` are required for local verification before submitting code changes.
 - **GitHub Runner**: Workflows are designed and tested on standard `ubuntu-latest` environments.
 
@@ -113,7 +128,8 @@ This repository uses automated dependency management configuration defined under
 
 Initialize development dependencies and activate local Git Hooks:
 ```bash
-npm install
+pre-commit install --hook-type pre-push
+pre-commit install --hook-type commit-msg
 ```
 
 ### 2. Manual Verification
@@ -152,6 +168,8 @@ All branches created in this repository must use category prefixes and end with 
 - `ci/` — Pipeline-specific configurations and lint gates
 - `perf/` — Performance improvements
 - `revert/` — Reverting previous commits
+
+> These conventions are enforced automatically. The `branch-name-lint` job in [`ci.yml`](.github/workflows/ci.yml) rejects any pull request branch that does not match, and `pr-title-lint` applies the Conventional Commits check to the pull request title. Branches created by automation are exempt: `release-please--*` and `dependabot/*` are allowed through.
 
 ### 2. Commit Message Convention
 
@@ -217,7 +235,7 @@ concurrency:
 
 jobs:
   ansible-ci:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.5
     with:
       ansible-lint-profile: "production"
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
@@ -295,7 +313,7 @@ ignore_unasserted:
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.5
     with:
       python-version: "3.12"
       vars-validation-mode: "warn"
@@ -337,11 +355,11 @@ permissions:
 
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.5
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.5
     with:
       python-version: "3.12"
     secrets:
@@ -369,7 +387,7 @@ Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note
 ```yaml
 jobs:
   lint:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v3.1.5
     with:
       ansible-lint-profile: "production"
 ```
@@ -393,7 +411,7 @@ TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be i
 ```yaml
 jobs:
   security:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v3.1.5
     with:
       enable-trufflehog: true
       enable-trivy: true
@@ -421,7 +439,7 @@ Syntax checks and Molecule integration test matrix. Creates a test matrix from `
 ```yaml
 jobs:
   molecule:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v3.1.5
     with:
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
       molecule-scenarios: '["default"]'
@@ -467,11 +485,11 @@ If using the orchestrator `ansible-ci.yml`, no configuration changes are require
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.5
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.0
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.5
     with:
       python-version: "3.12"
     secrets:
@@ -508,10 +526,10 @@ This repository uses [Semantic Versioning](https://semver.org/) with automated r
 
 ```yaml
 # Recommended — pin to a specific release tag
-uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-ci.yml@v2.0.0
+uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.5
 
 # Alternative — pin to a commit SHA (most secure, immutable)
-uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-ci.yml@abc123def456
+uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 ```
 
 > **Note**: Referencing `@main` is **not recommended** for production use — it tracks the latest commit and may include untested changes.
@@ -522,8 +540,8 @@ uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-ci.yml@
 2. Update the version tag in your caller workflow:
 
    ```diff
-   -    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v1.2.0
-   +    uses: grzegorzfranus/github-workflows/.github/workflows/reusable-ansible-ci.yml@v2.0.0
+   -    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.4
+   +    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.5
    ```
 
 3. Review the changelog for new inputs, changed defaults, or breaking changes.
@@ -552,7 +570,7 @@ After integrating the reusable workflows, verify they work correctly:
 
 ### Verify Publish Workflow
 
-1. Create and push a new version tag: `git tag v2.0.0 && git push origin v2.0.0`
+1. Create and push a new version tag in your role repository, for example `git tag v1.0.0 && git push origin v1.0.0`
 2. Navigate to the **Actions** tab → verify the Publish workflow runs successfully.
 3. Check [Ansible Galaxy](https://galaxy.ansible.com/) for your published role.
 
@@ -569,7 +587,7 @@ After integrating the reusable workflows, verify they work correctly:
 
 ## 🛡️ Security Features
 
-- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd`).
+- ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09`).
 - ✅ **Minimal Job Permissions**: Jobs elevate access only when required (e.g. `release-please` has `contents: write`, validation has `contents: read`).
 - ✅ **Isolated Linters**: Internal CI uses `pipx run` for zero-install linting; reusable workflows use isolated `pip install` within runner environments.
 - ✅ **Automated Branch Name Gate**: Rejects PR branches failing naming conventions.
@@ -582,11 +600,13 @@ After integrating the reusable workflows, verify they work correctly:
 
 | Action | SHA | Version |
 | --- | --- | --- |
-| `actions/checkout` | `93cb6efe18208431cddfb8368fd83d5badbf9bfd` | v5.0.1 |
-| `actions/setup-python` | `ece7cb06caefa5fff74198d8649806c4678c61a1` | v6.3.0 |
+| `actions/checkout` | `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` | v5.1.0 |
+| `actions/setup-python` | `5fda3b95a4ea91299a34e894583c3862153e4b97` | v7.0.0 |
 | `actions/cache` | `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` | v6.1.0 |
-| `trufflesecurity/trufflehog` | `00155c9dc586f34d189adc83d3ac2698c2ec551f` | v3.88.28 |
+| `trufflesecurity/trufflehog` | `bcfcf73aaf4759d4dadc2783177c245a02792318` | v3.97.0 |
 | `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25` | v0.36.0 |
+| `googleapis/release-please-action` | `45996ed1f6d02564a971a2fa1b5860e934307cf7` | v5.0.0 |
+| `raven-actions/actionlint` | `3d39aea434753780c3b3d4a1a31c854b4dbf49d7` | v2.2.0 |
 
 ---
 
@@ -612,21 +632,17 @@ github-workflows/
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
 │   └── dependabot.yml                 # Actions dependency updates config
-├── .husky/                            # Git hooks configuration (Husky)
-│   ├── commit-msg                     # Commit message validation hook
-│   └── pre-commit                     # Pre-commit workflows validation hook
 ├── scripts/
 │   └── validate.sh                    # Pre-commit validation runner script
 ├── .gitignore                         # Git ignore configurations
+├── .pre-commit-config.yaml            # Local lint and commit message hooks
 ├── .release-please-manifest.json      # Google Release Please version tracking
 ├── .yamllint                          # yamllint settings
 ├── CHANGELOG.md                       # Repository changelog
 ├── LICENSE                            # Apache-2.0 License
 ├── README.md                          # This documentation
 ├── commitlint.config.js               # Commitlint config file
-├── package.json                       # Node dependencies file
-├── release-please-config.json         # Google Release Please config
-└── package-lock.json                  # Lock file for package.json
+└── release-please-config.json         # Google Release Please config
 ```
 
 ---

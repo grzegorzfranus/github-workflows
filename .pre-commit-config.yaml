@@ -1,0 +1,42 @@
+---
+# Configuration for pre-commit hooks
+# See https://pre-commit.com for more information
+# Lint hooks run on push; commitlint runs on the commit message.
+default_stages: [pre-push]
+
+repos:
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        files: ^\.github/(workflows|ISSUE_TEMPLATE)/.*\.ya?ml$
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+        name: "actionlint (workflows)"
+        files: ^\.github/workflows/.*\.ya?ml$
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.27.0
+    hooks:
+      - id: zizmor
+        name: "zizmor (workflows)"
+        files: ^\.github/workflows/.*\.ya?ml$
+
+  - repo: local
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.26.0
+    hooks:
+      - id: commitlint
+        name: "commitlint (conventional commits)"
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]

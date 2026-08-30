@@ -2,9 +2,15 @@
 .vscode/
 .idea/
 .cursor/
+*.swp
 node_modules/
 package-lock.json
 
+# AI agents and assistants
+.agents/
+.agent/
+.claude/
+.gemini/
 
 # Python virtual environment directories
 .env
@@ -26,6 +32,7 @@ __pycache__/
 .ruff_cache/
 .tox/
 .coverage
+coverage/
 htmlcov/
 
 # Build and packaging artifacts
@@ -35,6 +42,7 @@ dist/
 
 # Cache files and directories
 .cache/
+.pre-commit/
 
 # Ansible local artifacts and cache
 .ansible/
@@ -54,3 +62,6 @@ Thumbs.db
 .env.local
 .env.*
 !.env.example
+
+# Scratch space for PR descriptions (see git-workflow skill)
+tmp/

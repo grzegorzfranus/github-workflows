@@ -17,7 +17,7 @@ on:
         type: string
         default: ""
       enable-galaxy-metadata-check:
-        description: "[DEPRECATED] Moved to reusable-ansible-meta-validate.yml — this input is ignored"
+        description: "[DEPRECATED] Moved to ansible-meta-validate.yml — this input is ignored"
         type: boolean
         default: true
       runner:
