@@ -29,9 +29,7 @@ This repository serves as a model blueprint ("wzór") for corporate workflows. I
 
 ---
 
-## 🎯 Architecture
-
-### Ansible CI Pipeline
+## 🎯 Ansible CI Pipeline
 
 The Ansible CI orchestrator coordinates all quality checks in a strict dependency chain:
 
@@ -446,73 +444,6 @@ jobs:
       python-version: "3.12"
       molecule-timeout: 30
 ```
-
----
-
-## 🔄 Migration to v4
-
-Version `v4.0.0` introduces a breaking change by stripping the `reusable-` prefix from all reusable workflow filenames. This simplifies paths and aligns with standard practices.
-
-> **Note:** This section describes the unreleased major version migration path (prefix removal was applied to workflow files in v3.x, and the formal major bump to v4 is scheduled for future release).
-
-### Workflow Name Mapping
-
-To upgrade, replace the `uses:` paths in your caller workflows according to the following mapping:
-
-| Old Workflow Path (v2/v3) | New Workflow Path (v4.0.0+) |
-| ------------------------- | --------------------------- |
-| `.github/workflows/reusable-ansible-ci.yml` | `.github/workflows/ansible-ci.yml` |
-| `.github/workflows/reusable-ansible-publish.yml` | `.github/workflows/ansible-publish.yml` |
-| `.github/workflows/reusable-ansible-lint.yml` | `.github/workflows/ansible-lint.yml` |
-| `.github/workflows/reusable-ansible-security.yml` | `.github/workflows/ansible-security.yml` |
-| `.github/workflows/reusable-ansible-molecule.yml` | `.github/workflows/ansible-molecule.yml` |
-| `.github/workflows/reusable-ansible-meta-validate.yml` | `.github/workflows/ansible-meta-validate.yml` |
-
----
-
-## 🔄 Migration to v3
-
-Version `v3.0.0` introduces a breaking change by extracting the Ansible Galaxy metadata validation logic into a dedicated reusable workflow `ansible-meta-validate.yml`.
-
-### Key Changes:
-- **Publish Workflow**: The `ansible-publish.yml` workflow no longer executes `pre-publish-check` internally. Consuming repositories must run the metadata validation check before running the publish job.
-- **Lint Workflow**: The `ansible-lint.yml` workflow no longer runs metadata checks. The `enable-galaxy-metadata-check` input is now deprecated and ignored.
-- **Orchestrator**: The `ansible-ci.yml` coordinates the new validation as a separate job, running in parallel with Lint and Security, gating the Molecule tests.
-
-### Upgrade Procedure for Consumers:
-If using the orchestrator `ansible-ci.yml`, no configuration changes are required unless you explicitly disabled metadata checks. If using publish/lint workflows individually, ensure you call the metadata validation workflow:
-
-```yaml
-jobs:
-  validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.5
-
-  publish:
-    needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.5
-    with:
-      python-version: "3.12"
-    secrets:
-      galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}
-```
-
----
-
-## 🔄 Migration to v2
-
-Version `v2.0.0` introduces a breaking change by renaming all reusable workflows to standard kebab-case starting with the `reusable-` prefix. This aligns with corporate workflow design standards.
-
-### Workflow Name Mapping
-
-To upgrade, replace the `uses:` paths in your caller workflows according to the following mapping:
-
-| Old Workflow Path | New Workflow Path (v2.0.0+) |
-| ----------------- | --------------------------- |
-| `.github/workflows/ansible-ci.yml` | `.github/workflows/reusable-ansible-ci.yml` |
-| `.github/workflows/ansible-publish.yml` | `.github/workflows/reusable-ansible-publish.yml` |
-| `.github/workflows/ansible-lint.yml` | `.github/workflows/reusable-ansible-lint.yml` |
-| `.github/workflows/ansible-security.yml` | `.github/workflows/reusable-ansible-security.yml` |
-| `.github/workflows/ansible-molecule.yml` | `.github/workflows/reusable-ansible-molecule.yml` |
 
 ---
 
