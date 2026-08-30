@@ -29,7 +29,7 @@ on:
         type: boolean
         default: true
       enable-galaxy-metadata-check:
-        description: "Enable Galaxy meta/main.yml validation (dedicated reusable-ansible-meta-validate.yml)"
+        description: "[DEPRECATED → dedicated ansible-meta-validate.yml] Enable Galaxy meta/main.yml validation"
         type: boolean
         default: true
       vars-validation-mode:
@@ -78,7 +78,7 @@ jobs:
       runner: ${{ inputs.runner }}
 
   # ================================================================
-  # 2b. RUN METADATA VALIDATION WORKFLOW
+  # 3. RUN GALAXY METADATA VALIDATION
   # ================================================================
   ansible-meta-validate:
     name: "📋 Metadata"
@@ -90,18 +90,18 @@ jobs:
       vars-validation-mode: ${{ inputs.vars-validation-mode }}
 
   # ================================================================
-  # 3. RUN MOLECULE INTEGRATION TESTS
+  # 4. RUN MOLECULE INTEGRATION TESTS
   # ----------------------------------------------------------------
   # Runs after lint, security, and metadata checks pass to conserve resources.
   # ================================================================
   ansible-molecule:
     name: "🧪 Test"
-    needs: [ansible-lint, ansible-security, ansible-meta-validate]
     if: >-
       always() &&
       needs.ansible-lint.result == 'success' &&
       needs.ansible-security.result == 'success' &&
       (needs.ansible-meta-validate.result == 'success' || needs.ansible-meta-validate.result == 'skipped')
+    needs: [ansible-lint, ansible-security, ansible-meta-validate]
     uses: ./.github/workflows/ansible-molecule.yml
     with:
       molecule-scenarios: ${{ inputs.molecule-scenarios }}
@@ -112,7 +112,7 @@ jobs:
       runner: ${{ inputs.runner }}
 
   # ================================================================
-  # 4. CONSOLIDATED MERGE GATE
+  # 5. CONSOLIDATED MERGE GATE
   # ----------------------------------------------------------------
   # Single status target for branch protection.
   # ================================================================

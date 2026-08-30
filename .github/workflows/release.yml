@@ -57,8 +57,9 @@ jobs:
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
         run: |
-          REPO="${{ github.repository }}"
+          REPO="$GH_REPOSITORY"
           PR_NUMBER=$(gh pr list \
             --repo "$REPO" \
             --head "release-please--branches--main" \
@@ -78,7 +79,7 @@ jobs:
           persist-credentials: false
 
       - name: "🔍 Validate YAML Syntax"
-        run: pipx run yamllint .github/workflows/*.yml
+        run: pipx run yamllint==1.38.0 .github/workflows/*.yml
 
       - name: "🔍 Validate GitHub Actions"
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
@@ -87,9 +88,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ steps.pr.outputs.sha }}
+          GH_REPOSITORY: ${{ github.repository }}
         run: |
-          gh api "repos/${{ github.repository }}/statuses/$PR_SHA" \
+          gh api "repos/$GH_REPOSITORY/statuses/$PR_SHA" \
             -f state=success \
             -f context="Merge Check Gate" \
             -f description="All validations passed (Release PR)"
           echo "Set 'Merge Check' status on commit $PR_SHA"
+
+      - name: "❌ Publish Merge Check Failure Status"
+        if: failure() && steps.pr.outputs.sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          PR_SHA: ${{ steps.pr.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh api "repos/$GH_REPOSITORY/statuses/$PR_SHA" \
+            -f state=failure \
+            -f context="Merge Check Gate" \
+            -f description="Release PR validation failed. See the linked Actions run." \
+            -f target_url="$RUN_URL"
+          echo "Set failing 'Merge Check' status on commit $PR_SHA"
