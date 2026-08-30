@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.7](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.6...v3.1.7) (2026-08-30)
+
+
+### Documentation
+
+* remove the migration guides and align the pipeline sections ([#60](https://github.com/grzegorzfranus/github-workflows/issues/60)) ([#61](https://github.com/grzegorzfranus/github-workflows/issues/61)) ([7e822b7](https://github.com/grzegorzfranus/github-workflows/commit/7e822b71b0aba2fe5768095815cc4aaee2707dc6))
+
 ## [3.1.6](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.5...v3.1.6) (2026-08-30)
 
 
