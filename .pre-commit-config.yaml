@@ -33,6 +33,13 @@ repos:
         language: system
         types: [shell]
 
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.1
+    hooks:
+      - id: markdownlint-cli2
+        name: "markdownlint"
+        args: ["--fix"]
+
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.26.0
     hooks:

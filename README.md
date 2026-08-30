@@ -1,7 +1,7 @@
 # GitHub Workflows
 
-| Source                                                                                                            | Version                                                                                                                                | CI                                                                                                                                                              | License                                                           |
-| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Source | Version | CI | Pre-commit |
+| --- | --- | --- | --- |
 | [![Source Code](https://img.shields.io/badge/source-github-blue.svg)](https://github.com/grzegorzfranus/github-workflows) | [![Version](https://img.shields.io/github/v/release/grzegorzfranus/github-workflows)](https://github.com/grzegorzfranus/github-workflows/releases) | [![CI](https://github.com/grzegorzfranus/github-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/grzegorzfranus/github-workflows/actions/workflows/ci.yml) | [![Repository License](https://img.shields.io/badge/license-apache2.0-brightgreen.svg)](LICENSE) |
 
 Centralized, reusable, and secure GitHub Actions workflows and configuration templates designed to establish enterprise-grade CI/CD and repository hygiene standards.
@@ -125,6 +125,7 @@ This repository uses automated dependency management configuration defined under
 ### 1. Development Setup
 
 Initialize development dependencies and activate local Git Hooks:
+
 ```bash
 pre-commit install --hook-type pre-push
 pre-commit install --hook-type commit-msg
@@ -273,11 +274,13 @@ Checks role variable declarations and usage across four surfaces (`defaults/main
 10. Internal `__`-prefixed variables in `vars/**/*.yml` referenced at least once (`warning` class).
 
 **Graceful Degradation:**
+
 - Missing `defaults/main.yml`: skips validation with a `notice` annotation (e.g. stub repositories).
 - Missing `meta/argument_specs.yml`: skips checks 1, 2, 6, 9 with a warning.
 - Missing `tasks/assert.yml`: skips check 3 with a warning.
 
 **Rollout Strategy:**
+
 1. **`v3.1.0` (Stage 1)**: `vars-validation-mode` defaults to `warn`. Checks run and report to `$GITHUB_STEP_SUMMARY` without failing CI builds.
 2. **Stage 2 (Future Major)**: Default mode flips to `error`. Individual roles can pin `vars-validation-mode: warn` if not ready.
 
@@ -543,7 +546,7 @@ After integrating the reusable workflows, verify they work correctly:
 
 ## 📁 File Structure
 
-```
+```text
 github-workflows/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
@@ -563,8 +566,6 @@ github-workflows/
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
 │   └── dependabot.yml                 # Actions dependency updates config
-├── scripts/
-│   └── validate.sh                    # Pre-commit validation runner script
 ├── .gitignore                         # Git ignore configurations
 ├── .pre-commit-config.yaml            # Local lint and commit message hooks
 ├── .release-please-manifest.json      # Google Release Please version tracking

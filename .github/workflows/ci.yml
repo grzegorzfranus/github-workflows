@@ -214,7 +214,28 @@ jobs:
         run: pipx run zizmor==1.27.0 .github/workflows
 
   # ================================================================
-  # 4. MERGE CHECK — Single mandatory gate for PR merges
+  # 4. MARKDOWN VALIDATION
+  # ----------------------------------------------------------------
+  # Validates markdown files styling using markdownlint-cli2.
+  # ================================================================
+  markdown-lint:
+    name: "🔍 Validate Markdown"
+    needs: [branch-name-lint, pr-title-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: "🔍 Checkout repository"
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: "🔍 Run markdownlint"
+        run: npx markdownlint-cli2@0.23.1 "**/*.md"
+
+  # ================================================================
+  # 5. MERGE CHECK — Single mandatory gate for PR merges
   # ----------------------------------------------------------------
   # Aggregates all validation results into a single status check.
   # Configure this as the sole required check in branch protection
@@ -222,7 +243,7 @@ jobs:
   # ================================================================
   merge-check:
     name: "Merge Check Gate"
-    needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint, zizmor-scan]
+    needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint, zizmor-scan, markdown-lint]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -236,12 +257,14 @@ jobs:
           BRANCH_NAME_LINT_RESULT: ${{ needs.branch-name-lint.result }}
           PR_TITLE_LINT_RESULT: ${{ needs.pr-title-lint.result }}
           ZIZMOR_RESULT: ${{ needs.zizmor-scan.result }}
+          MARKDOWN_LINT_RESULT: ${{ needs.markdown-lint.result }}
         run: |
           echo "YAML Lint:        $YAML_LINT_RESULT"
           echo "Actions Lint:     $ACTIONS_LINT_RESULT"
           echo "Branch Name Lint: $BRANCH_NAME_LINT_RESULT"
           echo "PR Title Lint:    $PR_TITLE_LINT_RESULT"
           echo "Zizmor Scan:      $ZIZMOR_RESULT"
+          echo "Markdown Lint:    $MARKDOWN_LINT_RESULT"
 
           has_failures=0
 
@@ -267,6 +290,11 @@ jobs:
 
           if [[ "$ZIZMOR_RESULT" == "failure" || "$ZIZMOR_RESULT" == "cancelled" ]]; then
             echo "::error::Zizmor Scan failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "$MARKDOWN_LINT_RESULT" == "failure" || "$MARKDOWN_LINT_RESULT" == "cancelled" ]]; then
+            echo "::error::Markdown Lint failed or was cancelled"
             has_failures=1
           fi
 
