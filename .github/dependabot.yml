@@ -25,3 +25,11 @@ updates:
           - "patch"
     cooldown:
       default-days: 14
+    # actions/checkout is deliberately held on the v5 line. From v6 onwards it
+    # writes credentials via an includeIf "gitdir:" directive, which does not
+    # match when a self-hosted runner's _work directory is a symlink, breaking
+    # authentication (actions/checkout#2393, still open). v5.x updates are
+    # still accepted, so security backports on that line keep flowing.
+    ignore:
+      - dependency-name: "actions/checkout"
+        versions: [">= 6"]
