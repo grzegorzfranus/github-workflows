@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.9...v3.2.0) (2026-08-30)
+
+
+### Features
+
+* adopt the shared runner selection mechanism ([#69](https://github.com/grzegorzfranus/github-workflows/issues/69)) ([#71](https://github.com/grzegorzfranus/github-workflows/issues/71)) ([219e963](https://github.com/grzegorzfranus/github-workflows/commit/219e96385fe1acac2be278f620969a492858ce49))
+
 ## [3.1.9](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.8...v3.1.9) (2026-08-30)
 
 
