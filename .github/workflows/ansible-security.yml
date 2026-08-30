@@ -12,8 +12,12 @@ on:
         description: "Enable Trivy IaC security scans"
         type: boolean
         default: true
+      runner-group:
+        description: "Runner group to execute jobs on. Ignored when 'runner' is set."
+        type: string
+        default: ""
       runner:
-        description: "Runner label to execute jobs on"
+        description: "Explicit runner label. Overrides 'runner-group' when non-empty."
         type: string
         default: "ubuntu-latest"
 
@@ -27,7 +31,7 @@ jobs:
   secret-scan:
     name: "🔒 Scan for Secrets"
     if: ${{ inputs.enable-trufflehog }}
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
@@ -47,7 +51,7 @@ jobs:
   iac-scan:
     name: "🔒 Scan IaC Misconfigurations"
     if: ${{ inputs.enable-trivy }}
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
@@ -82,7 +86,7 @@ jobs:
     name: "✅ Security Gate"
     needs: [secret-scan, iac-scan]
     if: always()
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"

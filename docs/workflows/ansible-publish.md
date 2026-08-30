@@ -9,7 +9,8 @@ Publishes tagged role releases to Ansible Galaxy. Includes retry logic with expo
 | Input | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `python-version` | string | no | `"3.12"` | Python version to use on the runner |
-| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
+| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
 
 **Secrets:**
 

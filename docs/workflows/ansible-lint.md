@@ -12,7 +12,8 @@ Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note
 | `python-version` | string | no | `"3.12"` | Python version to use on the runner |
 | `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
 | `enable-galaxy-metadata-check` | boolean | no | `true` | [DEPRECATED] Ignored, moved to dedicated workflow |
-| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
+| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
 
 **Usage Example:**
 

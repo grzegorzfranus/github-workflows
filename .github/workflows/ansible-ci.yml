@@ -44,8 +44,12 @@ on:
         description: "Path to CI requirements.txt for pinned tool versions (empty = use defaults)"
         type: string
         default: ""
+      runner-group:
+        description: "Runner group to execute jobs on. Ignored when 'runner' is set."
+        type: string
+        default: ""
       runner:
-        description: "Runner label to execute jobs on"
+        description: "Explicit runner label. Overrides 'runner-group' when non-empty."
         type: string
         default: "ubuntu-latest"
 
@@ -64,6 +68,7 @@ jobs:
       python-version: ${{ inputs.python-version }}
       requirements-ci-file: ${{ inputs.requirements-ci-file }}
       enable-galaxy-metadata-check: ${{ inputs.enable-galaxy-metadata-check }}
+      runner-group: ${{ inputs.runner-group }}
       runner: ${{ inputs.runner }}
 
   # ================================================================
@@ -75,6 +80,7 @@ jobs:
     with:
       enable-trufflehog: ${{ inputs.enable-trufflehog }}
       enable-trivy: ${{ inputs.enable-trivy }}
+      runner-group: ${{ inputs.runner-group }}
       runner: ${{ inputs.runner }}
 
   # ================================================================
@@ -86,6 +92,7 @@ jobs:
     uses: ./.github/workflows/ansible-meta-validate.yml
     with:
       python-version: ${{ inputs.python-version }}
+      runner-group: ${{ inputs.runner-group }}
       runner: ${{ inputs.runner }}
       vars-validation-mode: ${{ inputs.vars-validation-mode }}
 
@@ -109,6 +116,7 @@ jobs:
       python-version: ${{ inputs.python-version }}
       molecule-timeout: ${{ inputs.molecule-timeout }}
       requirements-ci-file: ${{ inputs.requirements-ci-file }}
+      runner-group: ${{ inputs.runner-group }}
       runner: ${{ inputs.runner }}
 
   # ================================================================
@@ -120,7 +128,7 @@ jobs:
     name: "Merge Check Gate"
     needs: [ansible-lint, ansible-security, ansible-meta-validate, ansible-molecule]
     if: always()
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"
