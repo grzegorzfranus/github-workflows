@@ -1,5 +1,7 @@
 # Ansible Molecule Testing (`ansible-molecule.yml`)
 
+> **Version pinning**: the example below uses `@main` for readability. In production, pin a release tag instead — see [Versioning & Upgrade](../../README.md#-versioning--upgrade).
+
 Syntax checks and Molecule integration test matrix. Creates a test matrix from `molecule-scenarios × molecule-distros`. Contains a Molecule Gate job.
 
 **Inputs:**
@@ -18,7 +20,7 @@ Syntax checks and Molecule integration test matrix. Creates a test matrix from `
 ```yaml
 jobs:
   molecule:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-molecule.yml@main
     with:
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'
       molecule-scenarios: '["default"]'

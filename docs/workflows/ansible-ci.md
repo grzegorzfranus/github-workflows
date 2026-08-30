@@ -1,5 +1,7 @@
 # Ansible CI Orchestrator (`ansible-ci.yml`)
 
+> **Version pinning**: the example below uses `@main` for readability. In production, pin a release tag instead — see [Versioning & Upgrade](../../README.md#-versioning--upgrade).
+
 The primary CI pipeline. It coordinates the execution of linting, security, metadata validation, and functional integration tests in a strict dependency chain. Contains a final Merge Check Gate that aggregates all results into a single required status check.
 
 **Inputs:**
@@ -37,7 +39,7 @@ concurrency:
 
 jobs:
   ansible-ci:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@main
     with:
       ansible-lint-profile: "production"
       molecule-distros: '["ubuntu2404", "debian12", "rockylinux9"]'

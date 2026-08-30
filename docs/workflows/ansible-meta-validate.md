@@ -1,5 +1,7 @@
 # Ansible Galaxy Metadata & Variable Validation (`ansible-meta-validate.yml`)
 
+> **Version pinning**: the example below uses `@main` for readability. In production, pin a release tag instead — see [Versioning & Upgrade](../../README.md#-versioning--upgrade).
+
 Dedicated validation of Ansible Galaxy metadata structure (`meta/main.yml`) and variable consistency across role surfaces.
 
 ## Variable Consistency Validation
@@ -64,7 +66,7 @@ ignore_unasserted:
 ```yaml
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@main
     with:
       python-version: "3.12"
       vars-validation-mode: "warn"

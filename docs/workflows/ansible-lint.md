@@ -1,5 +1,7 @@
 # Ansible Lint (`ansible-lint.yml`)
 
+> **Version pinning**: the example below uses `@main` for readability. In production, pin a release tag instead — see [Versioning & Upgrade](../../README.md#-versioning--upgrade).
+
 Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note: Galaxy metadata check has been deprecated in this workflow (moved to `ansible-meta-validate.yml`).
 
 **Inputs:**
@@ -17,7 +19,7 @@ Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note
 ```yaml
 jobs:
   lint:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-lint.yml@main
     with:
       ansible-lint-profile: "production"
 ```

@@ -1,5 +1,7 @@
 # Ansible Security (`ansible-security.yml`)
 
+> **Version pinning**: the example below uses `@main` for readability. In production, pin a release tag instead — see [Versioning & Upgrade](../../README.md#-versioning--upgrade).
+
 TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be independently enabled or disabled. Contains a Security Gate job.
 
 **Inputs:**
@@ -15,7 +17,7 @@ TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be i
 ```yaml
 jobs:
   security:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-security.yml@main
     with:
       enable-trufflehog: true
       enable-trivy: true

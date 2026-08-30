@@ -17,92 +17,6 @@ This repository serves as a model blueprint ("wzór") for corporate workflows. I
 - 🤖 **Automated Release Management**: Zero-touch versioning, tagging, and changelog generation using Google Release Please.
 - 📋 **Corporate Governance Templates**: Premium templates for pull requests and issues to streamline team review cycles.
 
-## 🧭 Design Principles
-
-| Principle | Rationale | Applied As |
-| --- | --- | --- |
-| **Commit SHA Pinning** | Mutable tags can be repointed at malicious code after review. | Every third-party action is pinned to a 40-character commit SHA with the version in a trailing comment. |
-| **Least Privilege** | A leaked token should be able to do as little as possible. | Every job declares its own `permissions` block rather than inheriting a broad default. |
-| **Fail Fast** | Runner minutes spent on a pull request that cannot merge are wasted. | Branch name and pull request title are validated before any linting or test job runs. |
-| **Reproducible Tooling** | An unpinned linter makes a green run unreproducible a week later. | `pipx run` invocations pin exact tool versions. |
-| **Single Merge Gate** | Branch protection should depend on one status, not a growing list. | All checks feed one aggregated merge gate job. |
-
----
-
-## 🎯 Ansible CI Pipeline
-
-The Ansible CI orchestrator coordinates all quality checks in a strict dependency chain:
-
-```mermaid
-graph TD
-    A["Consumer Repository<br/>.github/workflows/ci.yml"] -->|"uses: ...ansible-ci.yml@v3"| B["ansible-ci.yml<br/>(Orchestrator)"]
-    B -->|"Job 1"| C["ansible-lint.yml<br/>yamllint + ansible-lint"]
-    B -->|"Job 2"| D["ansible-security.yml<br/>TruffleHog + Trivy"]
-    B -->|"Job 3"| G["ansible-meta-validate.yml<br/>Galaxy metadata validation"]
-    C --> E["ansible-molecule.yml<br/>Syntax check + Molecule<br/>matrix (distro × scenario)"]
-    D --> E
-    G --> E
-    E --> F["merge-check<br/>(Gate — aggregates all results)"]
-
-    style A fill:#2d333b,stroke:#539bf5,color:#adbac7
-    style B fill:#2d333b,stroke:#f47067,color:#adbac7
-    style C fill:#2d333b,stroke:#57ab5a,color:#adbac7
-    style D fill:#2d333b,stroke:#e5534b,color:#adbac7
-    style E fill:#2d333b,stroke:#c69026,color:#adbac7
-    style F fill:#2d333b,stroke:#986ee2,color:#adbac7
-    style G fill:#2d333b,stroke:#57ab5a,color:#adbac7
-```
-
-**Execution order**: Lint, Security, and Metadata run in parallel → Molecule waits for all three → Merge Check Gate evaluates all results.
-
----
-
-## 🔁 CI Pipeline (this repository)
-
-Workflows in this repository are validated continuously to ensure compliance, YAML format correctness, and strict security posture.
-
-```mermaid
-graph TD
-    A["Validate Branch Naming<br/>(branch-name-lint)"] & B["Validate PR Title Format<br/>(pr-title-lint)"] --> C["Validate YAML Syntax<br/>(yaml-lint)"]
-    A & B --> D["Validate GitHub Actions<br/>(actions-lint)"]
-    A & B --> E["Security Scan (zizmor)<br/>(zizmor-scan)"]
-    C & D & E --> F["Merge Check Gate<br/>(merge-check)"]
-
-    style A fill:#2d333b,stroke:#539bf5,color:#adbac7
-    style B fill:#2d333b,stroke:#539bf5,color:#adbac7
-    style C fill:#2d333b,stroke:#57ab5a,color:#adbac7
-    style D fill:#2d333b,stroke:#57ab5a,color:#adbac7
-    style E fill:#2d333b,stroke:#e5534b,color:#adbac7
-    style F fill:#2d333b,stroke:#986ee2,color:#adbac7
-```
-
----
-
-## 🔑 Required GitHub Secrets
-
-To use the Galaxy publish capabilities, you must configure the following secret in the repository settings:
-
-| Secret Name | Purpose | Target Workflow |
-| ----------- | ------- | --------------- |
-| `GALAXY_API_KEY` | Ansible Galaxy token used to authorize the publishing of tagged releases. | `ansible-publish.yml` |
-
----
-
-## 🤖 Dependabot Update Policy
-
-This repository uses automated dependency management configuration defined under [`.github/dependabot.yml`](.github/dependabot.yml).
-
-- **Schedule**: Checked weekly on Monday at 06:00 (Europe/Warsaw timezone).
-- **Groupings**: `minor` and `patch` updates are grouped under a single pull request to reduce PR noise.
-- **Limit**: Maximum of 10 open pull requests at any time.
-- **Cooldown**: 14 days cooldown is applied to updates to ensure stability.
-- **Commit Messages**: Update pull requests use the `build` Conventional Commit prefix with scope included, and carry the `dependencies` and `github-actions` labels.
-- **Held Majors**: `actions/checkout` is pinned to the v5 line and updates to v6 and above are ignored. From v6 onwards checkout writes credentials through an `includeIf "gitdir:"` directive, which fails to match when a self-hosted runner's `_work` directory is a symlink ([actions/checkout#2393](https://github.com/actions/checkout/issues/2393), still open). Patch and minor updates within v5.x are still accepted, so security backports on that line keep arriving.
-- **Coupled Pins**: TruffleHog is pinned twice, once by action SHA and once by the `with: version:` input naming the scanner binary. Dependabot only updates the SHA, so every TruffleHog bump must have the `version:` input adjusted in review or the newer action will keep scanning with the older binary.
-- **Pull Request Review**: All updates are reviewed manually and must pass local verification checks before staging and integration.
-
----
-
 ## 📋 Requirements
 
 ### For developers of this repository
@@ -148,6 +62,121 @@ pipx run zizmor .github/workflows
 
 ---
 
+## 📦 Reusable Workflows
+
+This repository provides modular, reusable workflows organized by technology stack. Additional workflow categories will be added as the repository evolves.
+
+### Ansible Workflows
+
+Each reusable workflow has its own reference page with a full input table and a usage example.
+
+| Workflow | Purpose | Reference |
+| --- | --- | --- |
+| `ansible-ci.yml` | Orchestrates lint, security, metadata and Molecule for a role repository | [docs](docs/workflows/ansible-ci.md) |
+| `ansible-lint.yml` | yamllint and ansible-lint static analysis | [docs](docs/workflows/ansible-lint.md) |
+| `ansible-meta-validate.yml` | Galaxy metadata and role variable contract validation | [docs](docs/workflows/ansible-meta-validate.md) |
+| `ansible-molecule.yml` | Syntax check and Molecule matrix testing | [docs](docs/workflows/ansible-molecule.md) |
+| `ansible-publish.yml` | Publishes a validated role to Ansible Galaxy | [docs](docs/workflows/ansible-publish.md) |
+| `ansible-security.yml` | TruffleHog secret scanning and Trivy IaC scanning | [docs](docs/workflows/ansible-security.md) |
+
+---
+
+## 📁 File Structure
+
+```text
+github-workflows/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.yml             # Interactive Bug report form
+│   │   ├── config.yml                 # Issue templates config
+│   │   ├── feature_request.yml        # Interactive Feature request form
+│   │   └── task.yml                   # Interactive Task chore form
+│   ├── PULL_REQUEST_TEMPLATE/
+│   │   └── pull_request_template.md   # PR checklist template
+│   ├── workflows/
+│   │   ├── ansible-ci.yml    # Ansible CI orchestrator
+│   │   ├── ansible-lint.yml  # Reusable Ansible lint validations
+│   │   ├── ansible-meta-validate.yml # Reusable Galaxy metadata validation
+│   │   ├── ansible-molecule.yml # Reusable Molecule test runner
+│   │   ├── ansible-publish.yml # Reusable Galaxy publish template
+│   │   ├── ansible-security.yml # Reusable TruffleHog & Trivy scans
+│   │   ├── ci.yml                     # Validator CI pipeline
+│   │   └── release.yml                # Release Please automation
+│   └── dependabot.yml                 # Actions dependency updates config
+├── .gitignore                         # Git ignore configurations
+├── .pre-commit-config.yaml            # Local lint and commit message hooks
+├── .release-please-manifest.json      # Google Release Please version tracking
+├── .yamllint                          # yamllint settings
+├── CHANGELOG.md                       # Repository changelog
+├── LICENSE                            # Apache-2.0 License
+├── README.md                          # This documentation
+├── commitlint.config.js               # Commitlint config file
+└── release-please-config.json         # Google Release Please config
+```
+
+---
+
+## 🧭 Design Principles
+
+| Principle | Rationale | Applied As |
+| --- | --- | --- |
+| **Commit SHA Pinning** | Mutable tags can be repointed at malicious code after review. | Every third-party action is pinned to a 40-character commit SHA with the version in a trailing comment. |
+| **Least Privilege** | A leaked token should be able to do as little as possible. | Every job declares its own `permissions` block rather than inheriting a broad default. |
+| **Fail Fast** | Runner minutes spent on a pull request that cannot merge are wasted. | Branch name and pull request title are validated before any linting or test job runs. |
+| **Reproducible Tooling** | An unpinned linter makes a green run unreproducible a week later. | `pipx run` invocations pin exact tool versions. |
+| **Single Merge Gate** | Branch protection should depend on one status, not a growing list. | All checks feed one aggregated merge gate job. |
+
+---
+
+## 🔁 CI Pipeline (this repository)
+
+Workflows in this repository are validated continuously to ensure compliance, YAML format correctness, and strict security posture.
+
+```mermaid
+graph TD
+    A["Validate Branch Naming<br/>(branch-name-lint)"] & B["Validate PR Title Format<br/>(pr-title-lint)"] --> C["Validate YAML Syntax<br/>(yaml-lint)"]
+    A & B --> D["Validate GitHub Actions<br/>(actions-lint)"]
+    A & B --> E["Security Scan (zizmor)<br/>(zizmor-scan)"]
+    C & D & E --> F["Merge Check Gate<br/>(merge-check)"]
+
+    style A fill:#2d333b,stroke:#539bf5,color:#adbac7
+    style B fill:#2d333b,stroke:#539bf5,color:#adbac7
+    style C fill:#2d333b,stroke:#57ab5a,color:#adbac7
+    style D fill:#2d333b,stroke:#57ab5a,color:#adbac7
+    style E fill:#2d333b,stroke:#e5534b,color:#adbac7
+    style F fill:#2d333b,stroke:#986ee2,color:#adbac7
+```
+
+---
+
+## 🎯 Ansible CI Pipeline
+
+The Ansible CI orchestrator coordinates all quality checks in a strict dependency chain:
+
+```mermaid
+graph TD
+    A["Consumer Repository<br/>.github/workflows/ci.yml"] -->|"uses: ...ansible-ci.yml@v3"| B["ansible-ci.yml<br/>(Orchestrator)"]
+    B -->|"Job 1"| C["ansible-lint.yml<br/>yamllint + ansible-lint"]
+    B -->|"Job 2"| D["ansible-security.yml<br/>TruffleHog + Trivy"]
+    B -->|"Job 3"| G["ansible-meta-validate.yml<br/>Galaxy metadata validation"]
+    C --> E["ansible-molecule.yml<br/>Syntax check + Molecule<br/>matrix (distro × scenario)"]
+    D --> E
+    G --> E
+    E --> F["merge-check<br/>(Gate — aggregates all results)"]
+
+    style A fill:#2d333b,stroke:#539bf5,color:#adbac7
+    style B fill:#2d333b,stroke:#f47067,color:#adbac7
+    style C fill:#2d333b,stroke:#57ab5a,color:#adbac7
+    style D fill:#2d333b,stroke:#e5534b,color:#adbac7
+    style E fill:#2d333b,stroke:#c69026,color:#adbac7
+    style F fill:#2d333b,stroke:#986ee2,color:#adbac7
+    style G fill:#2d333b,stroke:#57ab5a,color:#adbac7
+```
+
+**Execution order**: Lint, Security, and Metadata run in parallel → Molecule waits for all three → Merge Check Gate evaluates all results.
+
+---
+
 ## ⚙️ Configuration
 
 ### 1. Branch Naming Convention
@@ -187,22 +216,33 @@ Similarly, all Pull Requests must be structured according to the template locate
 
 ---
 
-## 📦 Reusable Workflows
+## 🔍 Verification
 
-This repository provides modular, reusable workflows organized by technology stack. Additional workflow categories will be added as the repository evolves.
+After integrating the reusable workflows, verify they work correctly:
 
-### Ansible Workflows
+### Check CI Status
 
-Each reusable workflow has its own reference page with a full input table and a usage example.
+1. Open a pull request in your Ansible role repository.
+2. Navigate to the **Actions** tab → verify the following jobs appear and pass:
+   - `🔍 Lint` → yamllint, ansible-lint, Galaxy metadata check
+   - `🔒 Security` → TruffleHog, Trivy
+   - `🧪 Test` → Syntax check, Molecule matrix
+   - `Merge Check Gate` → aggregated result
 
-| Workflow | Purpose | Reference |
+### Verify Publish Workflow
+
+1. Create and push a new version tag in your role repository, for example `git tag v1.0.0 && git push origin v1.0.0`
+2. Navigate to the **Actions** tab → verify the Publish workflow runs successfully.
+3. Check [Ansible Galaxy](https://galaxy.ansible.com/) for your published role.
+
+### Common Issues
+
+| Issue | Cause | Solution |
 | --- | --- | --- |
-| `ansible-ci.yml` | Orchestrates lint, security, metadata and Molecule for a role repository | [docs](docs/workflows/ansible-ci.md) |
-| `ansible-lint.yml` | yamllint and ansible-lint static analysis | [docs](docs/workflows/ansible-lint.md) |
-| `ansible-meta-validate.yml` | Galaxy metadata and role variable contract validation | [docs](docs/workflows/ansible-meta-validate.md) |
-| `ansible-molecule.yml` | Syntax check and Molecule matrix testing | [docs](docs/workflows/ansible-molecule.md) |
-| `ansible-publish.yml` | Publishes a validated role to Ansible Galaxy | [docs](docs/workflows/ansible-publish.md) |
-| `ansible-security.yml` | TruffleHog secret scanning and Trivy IaC scanning | [docs](docs/workflows/ansible-security.md) |
+| `Merge Check Gate` fails | One or more upstream jobs failed or were cancelled | Check individual job logs for errors |
+| Publish fails with 403 | Invalid or missing `GALAXY_API_KEY` | Verify the secret is configured in repository settings |
+| Molecule timeout | Tests exceed the default 30-minute limit | Increase `molecule-timeout` input |
+| `meta/main.yml` validation fails | Missing required Galaxy metadata fields | Ensure `author`, `description`, `license`, `min_ansible_version`, and `platforms` are present |
 
 ---
 
@@ -245,36 +285,6 @@ uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@fbc6f3992
 
 ---
 
-## 🔍 Verification
-
-After integrating the reusable workflows, verify they work correctly:
-
-### Check CI Status
-
-1. Open a pull request in your Ansible role repository.
-2. Navigate to the **Actions** tab → verify the following jobs appear and pass:
-   - `🔍 Lint` → yamllint, ansible-lint, Galaxy metadata check
-   - `🔒 Security` → TruffleHog, Trivy
-   - `🧪 Test` → Syntax check, Molecule matrix
-   - `Merge Check Gate` → aggregated result
-
-### Verify Publish Workflow
-
-1. Create and push a new version tag in your role repository, for example `git tag v1.0.0 && git push origin v1.0.0`
-2. Navigate to the **Actions** tab → verify the Publish workflow runs successfully.
-3. Check [Ansible Galaxy](https://galaxy.ansible.com/) for your published role.
-
-### Common Issues
-
-| Issue | Cause | Solution |
-| --- | --- | --- |
-| `Merge Check Gate` fails | One or more upstream jobs failed or were cancelled | Check individual job logs for errors |
-| Publish fails with 403 | Invalid or missing `GALAXY_API_KEY` | Verify the secret is configured in repository settings |
-| Molecule timeout | Tests exceed the default 30-minute limit | Increase `molecule-timeout` input |
-| `meta/main.yml` validation fails | Missing required Galaxy metadata fields | Ensure `author`, `description`, `license`, `min_ansible_version`, and `platforms` are present |
-
----
-
 ## 🛡️ Security Features
 
 - ✅ **SHA Pinned Actions**: Immutable external dependencies (e.g. `actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09`).
@@ -300,38 +310,28 @@ After integrating the reusable workflows, verify they work correctly:
 
 ---
 
-## 📁 File Structure
+## 🤖 Dependabot Update Policy
 
-```text
-github-workflows/
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.yml             # Interactive Bug report form
-│   │   ├── config.yml                 # Issue templates config
-│   │   ├── feature_request.yml        # Interactive Feature request form
-│   │   └── task.yml                   # Interactive Task chore form
-│   ├── PULL_REQUEST_TEMPLATE/
-│   │   └── pull_request_template.md   # PR checklist template
-│   ├── workflows/
-│   │   ├── ansible-ci.yml    # Ansible CI orchestrator
-│   │   ├── ansible-lint.yml  # Reusable Ansible lint validations
-│   │   ├── ansible-meta-validate.yml # Reusable Galaxy metadata validation
-│   │   ├── ansible-molecule.yml # Reusable Molecule test runner
-│   │   ├── ansible-publish.yml # Reusable Galaxy publish template
-│   │   ├── ansible-security.yml # Reusable TruffleHog & Trivy scans
-│   │   ├── ci.yml                     # Validator CI pipeline
-│   │   └── release.yml                # Release Please automation
-│   └── dependabot.yml                 # Actions dependency updates config
-├── .gitignore                         # Git ignore configurations
-├── .pre-commit-config.yaml            # Local lint and commit message hooks
-├── .release-please-manifest.json      # Google Release Please version tracking
-├── .yamllint                          # yamllint settings
-├── CHANGELOG.md                       # Repository changelog
-├── LICENSE                            # Apache-2.0 License
-├── README.md                          # This documentation
-├── commitlint.config.js               # Commitlint config file
-└── release-please-config.json         # Google Release Please config
-```
+This repository uses automated dependency management configuration defined under [`.github/dependabot.yml`](.github/dependabot.yml).
+
+- **Schedule**: Checked weekly on Monday at 06:00 (Europe/Warsaw timezone).
+- **Groupings**: `minor` and `patch` updates are grouped under a single pull request to reduce PR noise.
+- **Limit**: Maximum of 10 open pull requests at any time.
+- **Cooldown**: 14 days cooldown is applied to updates to ensure stability.
+- **Commit Messages**: Update pull requests use the `build` Conventional Commit prefix with scope included, and carry the `dependencies` and `github-actions` labels.
+- **Held Majors**: `actions/checkout` is pinned to the v5 line and updates to v6 and above are ignored. From v6 onwards checkout writes credentials through an `includeIf "gitdir:"` directive, which fails to match when a self-hosted runner's `_work` directory is a symlink ([actions/checkout#2393](https://github.com/actions/checkout/issues/2393), still open). Patch and minor updates within v5.x are still accepted, so security backports on that line keep arriving.
+- **Coupled Pins**: TruffleHog is pinned twice, once by action SHA and once by the `with: version:` input naming the scanner binary. Dependabot only updates the SHA, so every TruffleHog bump must have the `version:` input adjusted in review or the newer action will keep scanning with the older binary.
+- **Pull Request Review**: All updates are reviewed manually and must pass local verification checks before staging and integration.
+
+---
+
+## 🔑 Required GitHub Secrets
+
+To use the Galaxy publish capabilities, you must configure the following secret in the repository settings:
+
+| Secret Name | Purpose | Target Workflow |
+| ----------- | ------- | --------------- |
+| `GALAXY_API_KEY` | Ansible Galaxy token used to authorize the publishing of tagged releases. | `ansible-publish.yml` |
 
 ---
 

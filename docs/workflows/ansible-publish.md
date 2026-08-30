@@ -1,5 +1,7 @@
 # Ansible Galaxy Publish (`ansible-publish.yml`)
 
+> **Version pinning**: the example below uses `@main` for readability. In production, pin a release tag instead — see [Versioning & Upgrade](../../README.md#-versioning--upgrade).
+
 Publishes tagged role releases to Ansible Galaxy. Includes retry logic with exponential backoff (up to 3 attempts). Note: Metadata validation is NOT performed by this workflow and must be run beforehand (e.g. via `ansible-meta-validate.yml`).
 
 **Inputs:**
@@ -32,11 +34,11 @@ permissions:
 
 jobs:
   validate-metadata:
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-meta-validate.yml@main
 
   publish:
     needs: [validate-metadata]
-    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.1.5
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@main
     with:
       python-version: "3.12"
     secrets:
