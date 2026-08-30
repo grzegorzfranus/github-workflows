@@ -54,3 +54,6 @@ Thumbs.db
 .env.local
 .env.*
 !.env.example
+
+# Scratch space for PR descriptions (see git-workflow skill)
+tmp/
