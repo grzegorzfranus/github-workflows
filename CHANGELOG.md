@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.6](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.5...v3.1.6) (2026-08-30)
+
+
+### Documentation
+
+* refresh README, replace husky, align workflows with the fork ([#57](https://github.com/grzegorzfranus/github-workflows/issues/57)) ([#58](https://github.com/grzegorzfranus/github-workflows/issues/58)) ([32ba59d](https://github.com/grzegorzfranus/github-workflows/commit/32ba59d3aaf35e156a93a805b38cdc8a5fc535bc))
+
 ## [3.1.5](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.4...v3.1.5) (2026-08-30)
 
 
