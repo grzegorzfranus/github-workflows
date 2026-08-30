@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.9](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.8...v3.1.9) (2026-08-30)
+
+
+### Documentation
+
+* split workflow docs, pin examples to main, unify section order ([#66](https://github.com/grzegorzfranus/github-workflows/issues/66)) ([#67](https://github.com/grzegorzfranus/github-workflows/issues/67)) ([3784fbb](https://github.com/grzegorzfranus/github-workflows/commit/3784fbb65f945eda152b266428dfb1c59c28fd8a))
+
 ## [3.1.8](https://github.com/grzegorzfranus/github-workflows/compare/v3.1.7...v3.1.8) (2026-08-30)
 
 
