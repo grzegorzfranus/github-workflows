@@ -20,8 +20,12 @@ on:
         description: "[DEPRECATED] Moved to ansible-meta-validate.yml — this input is ignored"
         type: boolean
         default: true
+      runner-group:
+        description: "Runner group to execute jobs on. Ignored when 'runner' is set."
+        type: string
+        default: ""
       runner:
-        description: "Runner label to execute jobs on"
+        description: "Explicit runner label. Overrides 'runner-group' when non-empty."
         type: string
         default: "ubuntu-latest"
 
@@ -34,7 +38,7 @@ jobs:
   # ================================================================
   yaml-lint:
     name: "🔍 Validate YAML Syntax"
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
@@ -73,7 +77,7 @@ jobs:
   # ================================================================
   ansible-lint:
     name: "🔍 Validate Ansible Coding Standards"
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
@@ -116,7 +120,7 @@ jobs:
     name: "✅ Lint Gate"
     needs: [yaml-lint, ansible-lint]
     if: always()
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"

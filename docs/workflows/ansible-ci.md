@@ -18,7 +18,8 @@ The primary CI pipeline. It coordinates the execution of linting, security, meta
 | `vars-validation-mode` | string | no | `"warn"` | Variable consistency validation: `'off'`, `'warn'` (report only), or `'error'` (fail build). Note: variable validation only executes when `enable-galaxy-metadata-check` is `true`, as both reside in the same job. |
 | `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
 | `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
-| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
+| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
 
 **Usage Example:**
 

@@ -24,8 +24,12 @@ on:
         description: "Path to CI requirements.txt for pinned tool versions (empty = use defaults)"
         type: string
         default: ""
+      runner-group:
+        description: "Runner group to execute jobs on. Ignored when 'runner' is set."
+        type: string
+        default: ""
       runner:
-        description: "Runner label to execute jobs on"
+        description: "Explicit runner label. Overrides 'runner-group' when non-empty."
         type: string
         default: "ubuntu-latest"
 
@@ -38,7 +42,7 @@ jobs:
   # ================================================================
   syntax-check:
     name: "🔍 Playbook Syntax Check"
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
@@ -102,7 +106,7 @@ jobs:
   molecule-test:
     name: "🧪 Molecule — ${{ matrix.scenario }} / ${{ matrix.distro }}"
     needs: [syntax-check]
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: ${{ inputs.molecule-timeout }}
     strategy:
       fail-fast: false
@@ -153,7 +157,7 @@ jobs:
     name: "✅ Molecule Gate"
     needs: [syntax-check, molecule-test]
     if: always()
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"

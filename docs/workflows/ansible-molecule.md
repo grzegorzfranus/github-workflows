@@ -13,7 +13,8 @@ Syntax checks and Molecule integration test matrix. Creates a test matrix from `
 | `python-version` | string | no | `"3.12"` | Python version to use on the runner |
 | `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
 | `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
-| `runner` | string | no | `"ubuntu-latest"` | Runner label to execute jobs on |
+| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
+| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
 
 **Usage Example:**
 

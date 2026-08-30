@@ -8,8 +8,12 @@ on:
         description: "Python version to use"
         type: string
         default: "3.12"
+      runner-group:
+        description: "Runner group to execute jobs on. Ignored when 'runner' is set."
+        type: string
+        default: ""
       runner:
-        description: "Runner label to execute jobs on"
+        description: "Explicit runner label. Overrides 'runner-group' when non-empty."
         type: string
         default: "ubuntu-latest"
       vars-validation-mode:
@@ -23,7 +27,7 @@ permissions:
 jobs:
   validate-metadata:
     name: "🔍 Validate Galaxy Metadata"
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
     timeout-minutes: 5
     steps:
       - name: "🔍 Checkout repository"
