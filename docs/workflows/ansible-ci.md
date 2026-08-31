@@ -21,6 +21,10 @@ The primary CI pipeline. It coordinates the execution of linting, security, meta
 | `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
 | `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
 
+**SBOM:**
+
+The orchestrator calls [`ansible-sbom.yml`](ansible-sbom.md) on every run, publishing a CycloneDX SBOM as the `sbom-ansible` artifact. That job is deliberately absent from the Merge Check Gate: Trivy has no analyzer for Ansible Galaxy collections, so a role repository is expected to report zero components, and a build must not fail on an expected result.
+
 **Usage Example:**
 
 Add the following to `.github/workflows/ci.yml` in your Ansible role repository:

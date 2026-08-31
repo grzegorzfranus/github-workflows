@@ -77,6 +77,7 @@ Each reusable workflow has its own reference page with a full input table and a 
 | `ansible-meta-validate.yml` | Galaxy metadata and role variable contract validation | [docs](docs/workflows/ansible-meta-validate.md) |
 | `ansible-molecule.yml` | Syntax check and Molecule matrix testing | [docs](docs/workflows/ansible-molecule.md) |
 | `ansible-publish.yml` | Publishes a validated role to Ansible Galaxy | [docs](docs/workflows/ansible-publish.md) |
+| `ansible-sbom.yml` | CycloneDX SBOM generation, reporting only | [docs](docs/workflows/ansible-sbom.md) |
 | `ansible-security.yml` | TruffleHog secret scanning and Trivy IaC scanning | [docs](docs/workflows/ansible-security.md) |
 
 ---
@@ -99,6 +100,7 @@ github-workflows/
 │   │   ├── ansible-meta-validate.yml # Reusable Galaxy metadata validation
 │   │   ├── ansible-molecule.yml # Reusable Molecule test runner
 │   │   ├── ansible-publish.yml # Reusable Galaxy publish template
+│   │   ├── ansible-sbom.yml # Reusable CycloneDX SBOM generation
 │   │   ├── ansible-security.yml # Reusable TruffleHog & Trivy scans
 │   │   ├── ci.yml                     # Validator CI pipeline
 │   │   └── release.yml                # Release Please automation
@@ -159,6 +161,7 @@ graph TD
     B -->|"Job 1"| C["ansible-lint.yml<br/>yamllint + ansible-lint"]
     B -->|"Job 2"| D["ansible-security.yml<br/>TruffleHog + Trivy"]
     B -->|"Job 3"| G["ansible-meta-validate.yml<br/>Galaxy metadata validation"]
+    B -->|"Job 5"| H["ansible-sbom.yml<br/>CycloneDX — reports only"]
     C --> E["ansible-molecule.yml<br/>Syntax check + Molecule<br/>matrix (distro × scenario)"]
     D --> E
     G --> E
@@ -171,9 +174,10 @@ graph TD
     style E fill:#2d333b,stroke:#c69026,color:#adbac7
     style F fill:#2d333b,stroke:#986ee2,color:#adbac7
     style G fill:#2d333b,stroke:#57ab5a,color:#adbac7
+    style H fill:#2d333b,stroke:#768390,color:#adbac7
 ```
 
-**Execution order**: Lint, Security, and Metadata run in parallel → Molecule waits for all three → Merge Check Gate evaluates all results.
+**Execution order**: Lint, Security, and Metadata run in parallel → Molecule waits for all three → Merge Check Gate evaluates all results. SBOM runs in parallel as well but never reaches the gate — it reports a component count and cannot block, because a role repository is expected to report zero.
 
 ---
 

@@ -120,7 +120,21 @@ jobs:
       runner: ${{ inputs.runner }}
 
   # ================================================================
-  # 5. CONSOLIDATED MERGE GATE
+  # 5. GENERATE SOFTWARE BILL OF MATERIALS
+  # ----------------------------------------------------------------
+  # Runs in parallel and is deliberately absent from the merge gate:
+  # a role repository is expected to report zero components, and a
+  # build must not fail on an expected result.
+  # ================================================================
+  ansible-sbom:
+    name: "📦 SBOM"
+    uses: ./.github/workflows/ansible-sbom.yml
+    with:
+      runner-group: ${{ inputs.runner-group }}
+      runner: ${{ inputs.runner }}
+
+  # ================================================================
+  # 6. CONSOLIDATED MERGE GATE
   # ----------------------------------------------------------------
   # Single status target for branch protection.
   # ================================================================

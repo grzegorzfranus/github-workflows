@@ -1,0 +1,77 @@
+---
+name: "Ansible SBOM"
+
+on:
+  workflow_call:
+    inputs:
+      scan-ref:
+        description: "Path to inventory"
+        type: string
+        default: "."
+      artifact-name:
+        description: "Name of the published SBOM artifact"
+        type: string
+        default: "sbom-ansible"
+      runner-group:
+        description: "Runner group to execute jobs on. Ignored when 'runner' is set."
+        type: string
+        default: "infra-privileged"
+      runner:
+        description: "Explicit runner label. Overrides 'runner-group' when non-empty."
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  # ================================================================
+  # 1. SOFTWARE BILL OF MATERIALS
+  # ----------------------------------------------------------------
+  # Emits a CycloneDX SBOM for the scanned tree.
+  #
+  # Trivy has no analyzer for Ansible Galaxy collections, so
+  # requirements.yml is not read as a dependency manifest and a role
+  # repository is expected to report zero components. The job records
+  # that count instead of failing a build over an expected result —
+  # callers must therefore keep it outside their merge gate.
+  # ================================================================
+  sbom:
+    name: "📦 Generate SBOM"
+    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
+    timeout-minutes: 10
+    steps:
+      - name: "🔍 Checkout repository"
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: "📦 Generate SBOM (CycloneDX)"
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.73.0'
+          scan-type: 'fs'
+          scan-ref: ${{ inputs.scan-ref }}
+          format: 'cyclonedx'
+          output: 'sbom.cdx.json'
+          hide-progress: true
+          exit-code: '0'
+
+      - name: "🔍 Report SBOM contents"
+        run: |
+          count=$(jq '.components | length // 0' sbom.cdx.json)
+          {
+            echo "### 📦 SBOM"
+            echo "Components recorded: $count"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$count" -lt 1 ]; then
+            echo "::warning::SBOM is empty — Trivy has no analyzer for Ansible Galaxy collections"
+          fi
+
+      - name: "📦 Upload SBOM"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: sbom.cdx.json
+          retention-days: 90
+          if-no-files-found: error
