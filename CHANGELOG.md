@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.3.0...v3.3.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **ansible:** runner defaults and workflow hardening ([#76](https://github.com/grzegorzfranus/github-workflows/issues/76)) ([#77](https://github.com/grzegorzfranus/github-workflows/issues/77)) ([f5fa7d6](https://github.com/grzegorzfranus/github-workflows/commit/f5fa7d6d510ff633285049fe1933b4da691a468b))
+
 ## [3.3.0](https://github.com/grzegorzfranus/github-workflows/compare/v3.2.0...v3.3.0) (2026-08-31)
 
 
