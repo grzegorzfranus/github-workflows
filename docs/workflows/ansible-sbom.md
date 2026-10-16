@@ -10,8 +10,8 @@ Emits a CycloneDX Software Bill of Materials for the scanned tree and publishes 
 | --- | --- | --- | --- | --- |
 | `scan-ref` | string | no | `"."` | Path to inventory |
 | `artifact-name` | string | no | `"sbom-ansible"` | Name of the published SBOM artifact |
-| `runner-group` | string | no | `"infra-privileged"` | Runner group to execute jobs on. Ignored when `runner` is set |
-| `runner` | string | no | `""` | Explicit runner label. Overrides `runner-group` when non-empty |
+| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set |
+| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty |
 
 **Artifacts:**
 

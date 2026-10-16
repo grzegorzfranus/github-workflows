@@ -1,4 +1,17 @@
 ---
+# ==============================================================================
+# Workflow: CI
+# ==============================================================================
+# Purpose:
+#   Quality gate of this repository. Validates the branch name and the pull
+#   request title, lints the workflow files (yamllint, actionlint, zizmor) and
+#   the Markdown files, and aggregates the results in the Merge Check Gate job
+#   required by the repository ruleset.
+#
+# Triggers:
+#   pull_request: every pull request
+# ==============================================================================
+
 name: "CI"
 run-name: "CI: ${{ github.event.pull_request.title || github.ref_name }} by @${{ github.actor }}"
 
@@ -211,7 +224,7 @@ jobs:
           persist-credentials: false
 
       - name: "🔒 Run zizmor"
-        run: pipx run zizmor==1.27.0 .github/workflows
+        run: pipx run zizmor==1.28.0 .github/workflows
 
   # ================================================================
   # 4. MARKDOWN VALIDATION
