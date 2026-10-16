@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.2](https://github.com/grzegorzfranus/github-workflows/compare/v3.4.1...v3.4.2) (2026-10-16)
+
+
+### Documentation
+
+* bring README in line with the repository ([#85](https://github.com/grzegorzfranus/github-workflows/issues/85)) ([#86](https://github.com/grzegorzfranus/github-workflows/issues/86)) ([6552140](https://github.com/grzegorzfranus/github-workflows/commit/65521403ec8504eb5c05e8520913b27cc4a6bb48))
+
 ## [3.4.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.4.0...v3.4.1) (2026-10-16)
 
 
