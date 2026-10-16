@@ -1,4 +1,17 @@
 ---
+# ==============================================================================
+# Workflow: Release
+# ==============================================================================
+# Purpose:
+#   Runs Release Please on every push to main to open or update the release
+#   pull request and to tag releases. When a release pull request is created,
+#   it sets the Merge Check Gate commit status on that pull request, because
+#   pull requests opened with GITHUB_TOKEN trigger no pull_request workflow.
+#
+# Triggers:
+#   push: the main branch
+# ==============================================================================
+
 name: "Release"
 run-name: "Release: ${{ github.ref_name }} by @${{ github.actor }}"
 
@@ -8,6 +21,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   # ================================================================

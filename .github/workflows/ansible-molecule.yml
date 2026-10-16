@@ -1,4 +1,21 @@
 ---
+# ==============================================================================
+# Reusable Workflow: Ansible Molecule Testing
+# ==============================================================================
+# Purpose:
+#   Performs syntax checks on Ansible playbooks and executes Molecule
+#   integration tests across a matrix of scenarios and distributions.
+#
+# Inputs:
+#   molecule-scenarios: JSON array of scenarios to run (e.g., '["default"]')
+#   molecule-distros: JSON array of distros to test against (e.g., '["ubuntu2404", "debian12", "rockylinux9"]')
+#   python-version: Python version to use
+#   molecule-timeout: Timeout in minutes for Molecule test jobs
+#   requirements-ci-file: Path to CI requirements.txt for pinned tool versions (empty = use defaults)
+#   runner-group: Runner group to execute jobs on. Ignored when 'runner' is set.
+#   runner: Explicit runner label. Overrides 'runner-group' when non-empty.
+# ==============================================================================
+
 name: "Ansible Molecule Testing"
 
 on:
@@ -42,7 +59,7 @@ jobs:
   # ================================================================
   syntax-check:
     name: "🔍 Playbook Syntax Check"
-    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || inputs.runner-group != '' && fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - name: "🔍 Checkout repository"
@@ -106,7 +123,7 @@ jobs:
   molecule-test:
     name: "🧪 Molecule — ${{ matrix.scenario }} / ${{ matrix.distro }}"
     needs: [syntax-check]
-    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || inputs.runner-group != '' && fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) || 'ubuntu-latest' }}
     timeout-minutes: ${{ inputs.molecule-timeout }}
     strategy:
       fail-fast: false
@@ -157,7 +174,7 @@ jobs:
     name: "✅ Molecule Gate"
     needs: [syntax-check, molecule-test]
     if: always()
-    runs-on: ${{ inputs.runner != '' && inputs.runner || fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) }}
+    runs-on: ${{ inputs.runner != '' && inputs.runner || inputs.runner-group != '' && fromJSON(format('{{"group":"{0}"}}', inputs.runner-group)) || 'ubuntu-latest' }}
     timeout-minutes: 5
     steps:
       - name: "⚙️ Evaluate results"
