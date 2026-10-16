@@ -4,19 +4,19 @@
 
 Syntax checks and Molecule integration test matrix. Creates a test matrix from `molecule-scenarios × molecule-distros`. Contains a Molecule Gate job.
 
-**Inputs:**
+## Inputs
 
-| Input | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `molecule-scenarios` | string | no | `'["default"]'` | JSON array of Molecule scenarios to run |
-| `molecule-distros` | string | no | `'["ubuntu2404", "debian12", "rockylinux9"]'` | JSON array of distro containers to test against |
-| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
-| `molecule-timeout` | number | no | `30` | Timeout in minutes for Molecule test jobs |
-| `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
-| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
-| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
+| Input                | Type   | Required | Default                                     | Description                                                                               |
+| -------------------- | ------ | -------- | ------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| molecule-scenarios   | string | no       | `["default"]`                               | JSON array of scenarios to run (e.g., '["default"]')                                      |
+| molecule-distros     | string | no       | `["ubuntu2404", "debian12", "rockylinux9"]` | JSON array of distros to test against (e.g., '["ubuntu2404", "debian12", "rockylinux9"]') |
+| python-version       | string | no       | `3.12`                                      | Python version to use                                                                     |
+| molecule-timeout     | number | no       | `30`                                        | Timeout in minutes for Molecule test jobs                                                 |
+| requirements-ci-file | string | no       | `""`                                        | Path to CI requirements.txt for pinned tool versions (empty = use defaults)               |
+| runner-group         | string | no       | `""`                                        | Runner group to execute jobs on. Ignored when 'runner' is set.                            |
+| runner               | string | no       | `ubuntu-latest`                             | Explicit runner label. Overrides 'runner-group' when non-empty.                           |
 
-**Usage Example:**
+## Usage
 
 ```yaml
 jobs:

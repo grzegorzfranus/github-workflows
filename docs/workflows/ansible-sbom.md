@@ -4,22 +4,22 @@
 
 Emits a CycloneDX Software Bill of Materials for the scanned tree and publishes it as a build artifact. Reports only — it never fails a build.
 
-**Inputs:**
+## Inputs
 
-| Input | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `scan-ref` | string | no | `"."` | Path to inventory |
-| `artifact-name` | string | no | `"sbom-ansible"` | Name of the published SBOM artifact |
-| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set |
-| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty |
+| Input         | Type   | Required | Default         | Description                                                     |
+| ------------- | ------ | -------- | --------------- | --------------------------------------------------------------- |
+| scan-ref      | string | no       | `.`             | Path to inventory                                               |
+| artifact-name | string | no       | `sbom-ansible`  | Name of the published SBOM artifact                             |
+| runner-group  | string | no       | `""`            | Runner group to execute jobs on. Ignored when 'runner' is set.  |
+| runner        | string | no       | `ubuntu-latest` | Explicit runner label. Overrides 'runner-group' when non-empty. |
 
-**Artifacts:**
+## Artifacts
 
-| Artifact | Retention | Contents |
-| --- | --- | --- |
-| `<artifact-name>` | 90 days | CycloneDX SBOM of the scanned tree |
+| Artifact          | Retention | Contents                           |
+| ----------------- | --------- | ---------------------------------- |
+| `<artifact-name>` | 90 days   | CycloneDX SBOM of the scanned tree |
 
-**Expected result for a role repository:**
+## Expected result for a role repository
 
 Trivy has no analyzer for Ansible Galaxy collections, so `requirements.yml` is not read as a dependency manifest. A role repository is therefore expected to report an SBOM with **no components** — measured against a representative role, the count is zero.
 
@@ -27,13 +27,13 @@ The workflow records the count in the run summary and emits a warning rather tha
 
 The value today is structural. The workflow, its artifact name and its retention are fixed, so the day a Galaxy analyzer exists — or the day the shipped artifact is redefined — only the scanner invocation changes.
 
-**Where to call it from:**
+## Where to call it from
 
 `ansible-ci.yml` calls this workflow on every run, which gives visibility per pull request.
 
 The moment a role actually ships is the Galaxy publish, not the pull request, so `ansible-publish.yml` is the more meaningful caller once there is something to inventory. That wiring is deliberately left out for now: an SBOM of zero components attached to a release would be a record of nothing.
 
-**Usage Example:**
+## Usage
 
 ```yaml
 jobs:

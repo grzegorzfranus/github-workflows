@@ -33,6 +33,14 @@ repos:
         language: system
         types: [shell]
 
+      - id: workflow-docs
+        name: "workflow docs parity"
+        entry: python scripts/ci/check_workflow_docs.py
+        language: python
+        additional_dependencies: ["pyyaml==6.0.3"]
+        files: ^(\.github/workflows/.*\.ya?ml|docs/workflows/.*\.md|scripts/ci/check_workflow_docs\.py)$
+        pass_filenames: false
+
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.23.1
     hooks:

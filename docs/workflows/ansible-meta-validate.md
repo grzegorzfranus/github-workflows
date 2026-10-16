@@ -4,11 +4,20 @@
 
 Dedicated validation of Ansible Galaxy metadata structure (`meta/main.yml`) and variable consistency across role surfaces.
 
+## Inputs
+
+| Input                | Type   | Required | Default         | Description                                                                              |
+| -------------------- | ------ | -------- | --------------- | ---------------------------------------------------------------------------------------- |
+| python-version       | string | no       | `3.12`          | Python version to use                                                                    |
+| runner-group         | string | no       | `""`            | Runner group to execute jobs on. Ignored when 'runner' is set.                           |
+| runner               | string | no       | `ubuntu-latest` | Explicit runner label. Overrides 'runner-group' when non-empty.                          |
+| vars-validation-mode | string | no       | `warn`          | Variable consistency validation: 'off', 'warn' (report only) or 'error' (fail the build) |
+
 ## Variable Consistency Validation
 
 Checks role variable declarations and usage across four surfaces (`defaults/main.yml`, `meta/argument_specs.yml`, `tasks/assert.yml`, `README.md`) and detects dead or unused variables.
 
-**Checks Performed:**
+## Checks Performed
 
 1. Every key in `defaults/main.yml` exists in `meta/argument_specs.yml` (`error` class).
 2. Every option in `meta/argument_specs.yml` exists in `defaults/main.yml` (`error` class).
@@ -25,18 +34,18 @@ Checks role variable declarations and usage across four surfaces (`defaults/main
 9. Sub-options under `options:` in `argument_specs` declaring their own `default:` (`warning` class).
 10. Internal `__`-prefixed variables in `vars/**/*.yml` referenced at least once (`warning` class).
 
-**Graceful Degradation:**
+## Graceful Degradation
 
 - Missing `defaults/main.yml`: skips validation with a `notice` annotation (e.g. stub repositories).
 - Missing `meta/argument_specs.yml`: skips checks 1, 2, 6, 9 with a warning.
 - Missing `tasks/assert.yml`: skips check 3 with a warning.
 
-**Rollout Strategy:**
+## Rollout Strategy
 
 1. **`v3.1.0` (Stage 1)**: `vars-validation-mode` defaults to `warn`. Checks run and report to `$GITHUB_STEP_SUMMARY` without failing CI builds.
 2. **Stage 2 (Future Major)**: Default mode flips to `error`. Individual roles can pin `vars-validation-mode: warn` if not ready.
 
-**Role Waiver Format (`.ansible-vars-validate.yml`):**
+## Role Waiver Format (`.ansible-vars-validate.yml`)
 
 Relying on optional dot-config at role root. Every entry **must** supply a non-empty `reason`.
 
@@ -53,16 +62,7 @@ ignore_unasserted:
     reason: "Arbitrary user mapping, no meaningful runtime constraint"
 ```
 
-**Inputs:**
-
-| Input | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
-| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
-| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
-| `vars-validation-mode` | string | no | `"warn"` | Validation mode: `'off'`, `'warn'`, or `'error'` |
-
-**Usage Example:**
+## Usage
 
 ```yaml
 jobs:
