@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.4.0...v3.4.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **ansible:** pin default tool versions in reusable workflows ([#82](https://github.com/grzegorzfranus/github-workflows/issues/82)) ([#83](https://github.com/grzegorzfranus/github-workflows/issues/83)) ([fc29e66](https://github.com/grzegorzfranus/github-workflows/commit/fc29e662b349994df4cfd0b928a1fd0e159d9b88))
+
 ## [3.4.0](https://github.com/grzegorzfranus/github-workflows/compare/v3.3.1...v3.4.0) (2026-10-16)
 
 
