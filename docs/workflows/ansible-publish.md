@@ -4,21 +4,21 @@
 
 Publishes tagged role releases to Ansible Galaxy. Includes retry logic with exponential backoff (up to 3 attempts). Note: Metadata validation is NOT performed by this workflow and must be run beforehand (e.g. via `ansible-meta-validate.yml`).
 
-**Inputs:**
+## Inputs
 
-| Input | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
-| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
-| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
+| Input          | Type   | Required | Default         | Description                                                     |
+| -------------- | ------ | -------- | --------------- | --------------------------------------------------------------- |
+| python-version | string | no       | `3.12`          | Python version to use                                           |
+| runner-group   | string | no       | `""`            | Runner group to execute jobs on. Ignored when 'runner' is set.  |
+| runner         | string | no       | `ubuntu-latest` | Explicit runner label. Overrides 'runner-group' when non-empty. |
 
-**Secrets:**
+## Secrets
 
-| Secret | Required | Description |
-| --- | --- | --- |
-| `galaxy-api-key` | **yes** | Ansible Galaxy API Key for role publishing |
+| Secret         | Required | Description            |
+| -------------- | -------- | ---------------------- |
+| galaxy-api-key | yes      | Ansible Galaxy API Key |
 
-**Usage Example:**
+## Usage
 
 Add the following to `.github/workflows/publish.yml` in your Ansible role repository:
 

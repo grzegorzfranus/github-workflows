@@ -4,9 +4,9 @@
 # ==============================================================================
 # Purpose:
 #   Quality gate of this repository. Validates the branch name and the pull
-#   request title, lints the workflow files (yamllint, actionlint, zizmor) and
-#   the Markdown files, and aggregates the results in the Merge Check Gate job
-#   required by the repository ruleset.
+#   request title, lints the workflow files (util-workflow-lint.yml), the
+#   Markdown files and the workflow documentation parity, and aggregates the
+#   results in the Merge Check Gate job required by the repository ruleset.
 #
 # Triggers:
 #   pull_request: every pull request
@@ -160,74 +160,22 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ================================================================
-  # 2. YAML SYNTAX VALIDATION
+  # 2. WORKFLOW LINT
   # ----------------------------------------------------------------
-  # Validates all workflow definitions for correct YAML syntax
-  # using yamllint via pipx run (isolated environments).
+  # Runs yamllint, actionlint and zizmor through the reusable
+  # util-workflow-lint.yml. The paths input is set to empty so this
+  # repository always lints its workflows.
   # Depends on branch-name-lint and pr-title-lint.
   # ================================================================
-  yaml-lint:
-    name: "🔍 Validate YAML Syntax"
+  workflow-lint:
+    name: "🔍 Lint Workflows"
     needs: [branch-name-lint, pr-title-lint]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: "🔍 Checkout repository"
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          persist-credentials: false
-
-      - name: "🔍 Lint workflow files"
-        run: pipx run yamllint==1.38.0 .github/workflows/*.yml
+    uses: ./.github/workflows/util-workflow-lint.yml
+    with:
+      paths: ""
 
   # ================================================================
-  # 3. GITHUB ACTIONS SCHEMA VALIDATION
-  # ----------------------------------------------------------------
-  # Validates GitHub Actions-specific syntax.
-  # Depends on branch-name-lint and pr-title-lint.
-  # ================================================================
-  actions-lint:
-    name: "🔍 Validate GitHub Actions"
-    needs: [branch-name-lint, pr-title-lint]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: "🔍 Checkout repository"
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          persist-credentials: false
-
-      - name: "🔍 Run actionlint"
-        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
-
-  # ================================================================
-  # 3b. SECURITY SCAN (ZIZMOR)
-  # ----------------------------------------------------------------
-  # Scans workflows for security violations.
-  # Depends on branch-name-lint and pr-title-lint.
-  # ================================================================
-  zizmor-scan:
-    name: "🔒 Security Scan (zizmor)"
-    needs: [branch-name-lint, pr-title-lint]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: "🔍 Checkout repository"
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          persist-credentials: false
-
-      - name: "🔒 Run zizmor"
-        run: pipx run zizmor==1.28.0 .github/workflows
-
-  # ================================================================
-  # 4. MARKDOWN VALIDATION
+  # 3. MARKDOWN VALIDATION
   # ----------------------------------------------------------------
   # Validates markdown files styling using markdownlint-cli2.
   # ================================================================
@@ -248,6 +196,34 @@ jobs:
         run: npx markdownlint-cli2@0.23.1 "**/*.md"
 
   # ================================================================
+  # 4. WORKFLOW DOCS PARITY
+  # ----------------------------------------------------------------
+  # Verifies that docs/workflows/*.md match the inputs, secrets and
+  # outputs declared by each reusable workflow.
+  # Depends on branch-name-lint and pr-title-lint.
+  # ================================================================
+  docs-lint:
+    name: "🔍 Validate Workflow Docs"
+    needs: [branch-name-lint, pr-title-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: "🔍 Checkout repository"
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      # Pinned version for reproducibility; bump deliberately (Dependabot does not track these — manual review cadence)
+      - name: "🔍 Check workflow docs parity"
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/docs-lint"
+          "$RUNNER_TEMP/docs-lint/bin/pip" install --quiet --disable-pip-version-check pyyaml==6.0.3
+          "$RUNNER_TEMP/docs-lint/bin/python" scripts/ci/check_workflow_docs.py
+
+  # ================================================================
   # 5. MERGE CHECK — Single mandatory gate for PR merges
   # ----------------------------------------------------------------
   # Aggregates all validation results into a single status check.
@@ -256,7 +232,7 @@ jobs:
   # ================================================================
   merge-check:
     name: "Merge Check Gate"
-    needs: [yaml-lint, actions-lint, branch-name-lint, pr-title-lint, zizmor-scan, markdown-lint]
+    needs: [branch-name-lint, pr-title-lint, workflow-lint, markdown-lint, docs-lint]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -265,19 +241,17 @@ jobs:
     steps:
       - name: "⚙️ Evaluate results"
         env:
-          YAML_LINT_RESULT: ${{ needs.yaml-lint.result }}
-          ACTIONS_LINT_RESULT: ${{ needs.actions-lint.result }}
           BRANCH_NAME_LINT_RESULT: ${{ needs.branch-name-lint.result }}
           PR_TITLE_LINT_RESULT: ${{ needs.pr-title-lint.result }}
-          ZIZMOR_RESULT: ${{ needs.zizmor-scan.result }}
+          WORKFLOW_LINT_RESULT: ${{ needs.workflow-lint.result }}
           MARKDOWN_LINT_RESULT: ${{ needs.markdown-lint.result }}
+          DOCS_LINT_RESULT: ${{ needs.docs-lint.result }}
         run: |
-          echo "YAML Lint:        $YAML_LINT_RESULT"
-          echo "Actions Lint:     $ACTIONS_LINT_RESULT"
           echo "Branch Name Lint: $BRANCH_NAME_LINT_RESULT"
           echo "PR Title Lint:    $PR_TITLE_LINT_RESULT"
-          echo "Zizmor Scan:      $ZIZMOR_RESULT"
+          echo "Workflow Lint:    $WORKFLOW_LINT_RESULT"
           echo "Markdown Lint:    $MARKDOWN_LINT_RESULT"
+          echo "Docs Lint:        $DOCS_LINT_RESULT"
 
           has_failures=0
 
@@ -291,23 +265,18 @@ jobs:
             has_failures=1
           fi
 
-          if [[ "$YAML_LINT_RESULT" == "failure" || "$YAML_LINT_RESULT" == "cancelled" ]]; then
-            echo "::error::YAML Lint failed or was cancelled"
-            has_failures=1
-          fi
-
-          if [[ "$ACTIONS_LINT_RESULT" == "failure" || "$ACTIONS_LINT_RESULT" == "cancelled" ]]; then
-            echo "::error::Actions Lint failed or was cancelled"
-            has_failures=1
-          fi
-
-          if [[ "$ZIZMOR_RESULT" == "failure" || "$ZIZMOR_RESULT" == "cancelled" ]]; then
-            echo "::error::Zizmor Scan failed or was cancelled"
+          if [[ "$WORKFLOW_LINT_RESULT" == "failure" || "$WORKFLOW_LINT_RESULT" == "cancelled" ]]; then
+            echo "::error::Workflow Lint failed or was cancelled"
             has_failures=1
           fi
 
           if [[ "$MARKDOWN_LINT_RESULT" == "failure" || "$MARKDOWN_LINT_RESULT" == "cancelled" ]]; then
             echo "::error::Markdown Lint failed or was cancelled"
+            has_failures=1
+          fi
+
+          if [[ "$DOCS_LINT_RESULT" == "failure" || "$DOCS_LINT_RESULT" == "cancelled" ]]; then
+            echo "::error::Docs Lint failed or was cancelled"
             has_failures=1
           fi
 

@@ -4,16 +4,16 @@
 
 TruffleHog secrets detection and Trivy IaC security scans. Each scanner can be independently enabled or disabled. Contains a Security Gate job.
 
-**Inputs:**
+## Inputs
 
-| Input | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `enable-trufflehog` | boolean | no | `true` | Enable TruffleHog secret scanning |
-| `enable-trivy` | boolean | no | `true` | Enable Trivy IaC security scans (HIGH/CRITICAL severity) |
-| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
-| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
+| Input             | Type    | Required | Default         | Description                                                     |
+| ----------------- | ------- | -------- | --------------- | --------------------------------------------------------------- |
+| enable-trufflehog | boolean | no       | `true`          | Enable TruffleHog secret scanning                               |
+| enable-trivy      | boolean | no       | `true`          | Enable Trivy IaC security scans                                 |
+| runner-group      | string  | no       | `""`            | Runner group to execute jobs on. Ignored when 'runner' is set.  |
+| runner            | string  | no       | `ubuntu-latest` | Explicit runner label. Overrides 'runner-group' when non-empty. |
 
-**Usage Example:**
+## Usage
 
 ```yaml
 jobs:

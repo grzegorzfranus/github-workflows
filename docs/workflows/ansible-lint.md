@@ -4,18 +4,18 @@
 
 Static YAML and Ansible linting. Contains yamllint and ansible-lint checks. Note: Galaxy metadata check has been deprecated in this workflow (moved to `ansible-meta-validate.yml`).
 
-**Inputs:**
+## Inputs
 
-| Input | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `ansible-lint-profile` | string | no | `"production"` | ansible-lint profile (e.g., `shared`, `production`) |
-| `python-version` | string | no | `"3.12"` | Python version to use on the runner |
-| `requirements-ci-file` | string | no | `""` | Path to CI `requirements.txt` for pinned tool versions |
-| `enable-galaxy-metadata-check` | boolean | no | `true` | [DEPRECATED] Ignored, moved to dedicated workflow |
-| `runner-group` | string | no | `""` | Runner group to execute jobs on. Ignored when `runner` is set. |
-| `runner` | string | no | `"ubuntu-latest"` | Explicit runner label. Overrides `runner-group` when non-empty. |
+| Input                        | Type    | Required | Default         | Description                                                                 |
+| ---------------------------- | ------- | -------- | --------------- | --------------------------------------------------------------------------- |
+| ansible-lint-profile         | string  | no       | `production`    | ansible-lint profile (e.g., shared, production)                             |
+| python-version               | string  | no       | `3.12`          | Python version to use                                                       |
+| requirements-ci-file         | string  | no       | `""`            | Path to CI requirements.txt for pinned tool versions (empty = use defaults) |
+| enable-galaxy-metadata-check | boolean | no       | `true`          | [DEPRECATED] Moved to ansible-meta-validate.yml — this input is ignored     |
+| runner-group                 | string  | no       | `""`            | Runner group to execute jobs on. Ignored when 'runner' is set.              |
+| runner                       | string  | no       | `ubuntu-latest` | Explicit runner label. Overrides 'runner-group' when non-empty.             |
 
-**Usage Example:**
+## Usage
 
 ```yaml
 jobs:
