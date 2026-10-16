@@ -55,8 +55,9 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
+      # Pinned version for reproducibility; bump deliberately (Dependabot does not track these — manual review cadence)
       - name: "⚙️ Install PyYAML"
-        run: pip install PyYAML
+        run: pip install PyYAML==6.0.3
 
       - name: "🔍 Verify meta/main.yml exists"
         run: |
