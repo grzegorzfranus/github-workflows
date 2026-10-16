@@ -69,8 +69,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-${{ inputs.python-version }}-
 
+      # Pinned version for reproducibility; bump deliberately (Dependabot does not track these — manual review cadence)
       - name: "⚙️ Install ansible-core"
-        run: pip install ansible-core
+        run: pip install ansible-core==2.21.4
 
       - name: "📦 Upload to Ansible Galaxy"
         env:
