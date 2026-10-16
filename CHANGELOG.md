@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.3](https://github.com/grzegorzfranus/github-workflows/compare/v3.4.2...v3.4.3) (2026-10-16)
+
+
+### Dependencies
+
+* **deps:** bump trufflesecurity/trufflehog from 3.97.1 to 3.97.9 in the minor-and-patch group across 1 directory ([#75](https://github.com/grzegorzfranus/github-workflows/issues/75)) ([73f160d](https://github.com/grzegorzfranus/github-workflows/commit/73f160deb8dca1d0f59352fa897d18092be83bc5))
+
 ## [3.4.2](https://github.com/grzegorzfranus/github-workflows/compare/v3.4.1...v3.4.2) (2026-10-16)
 
 
