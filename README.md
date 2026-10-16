@@ -350,7 +350,7 @@ uses: grzegorzfranus/github-workflows/.github/workflows/ansible-ci.yml@<40-chara
 | `actions/setup-python` | `5fda3b95a4ea91299a34e894583c3862153e4b97` | v7.0.0 |
 | `actions/cache` | `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` | v6.1.0 |
 | `actions/upload-artifact` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | v7.0.1 |
-| `trufflesecurity/trufflehog` | `20652fbbdefffcdaa493a5bf57ab2ac6b1db715b` | v3.97.1 |
+| `trufflesecurity/trufflehog` | `4dd8831c5f12599465d4d45c3c447b4018a34c85` | v3.97.9 |
 | `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25` | v0.36.0 |
 | `googleapis/release-please-action` | `45996ed1f6d02564a971a2fa1b5860e934307cf7` | v5.0.0 |
 | `raven-actions/actionlint` | `3d39aea434753780c3b3d4a1a31c854b4dbf49d7` | v2.2.0 |
@@ -373,7 +373,7 @@ Dependabot does not track tools installed inside workflow steps, so these are bu
 | pyflakes / shellcheck-py | 3.4.0 / 0.11.0.1 | `util-workflow-lint.yml` |
 | markdownlint-cli2 | 0.23.1 | `ci.yml`, pre-commit |
 | Trivy (binary) | v0.73.0 | `ansible-security.yml`, `ansible-sbom.yml` |
-| TruffleHog (binary) | 3.97.1 | `ansible-security.yml` |
+| TruffleHog (binary) | 3.97.9 | `ansible-security.yml` |
 
 ---
 
