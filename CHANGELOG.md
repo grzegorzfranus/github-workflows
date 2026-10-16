@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.0](https://github.com/grzegorzfranus/github-workflows/compare/v3.3.1...v3.4.0) (2026-10-16)
+
+
+### Features
+
+* **ci:** reusable workflow lint and workflow docs parity gate ([#79](https://github.com/grzegorzfranus/github-workflows/issues/79)) ([#80](https://github.com/grzegorzfranus/github-workflows/issues/80)) ([cede01f](https://github.com/grzegorzfranus/github-workflows/commit/cede01f36a4f8b0a599258da82a308c73f8865b9))
+
 ## [3.3.1](https://github.com/grzegorzfranus/github-workflows/compare/v3.3.0...v3.3.1) (2026-10-16)
 
 
